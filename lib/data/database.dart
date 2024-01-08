@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DataBase {
-  List<Expense> expenses = [];
+  static List<Expense> expenses = [];
   final _myBox = Hive.box("financeBox");
 
-  void createInitialData() {
+  static void createInitialData() {
     expenses = [];
   }
 
@@ -15,12 +18,50 @@ class DataBase {
     _myBox.delete("expenses");
   }
 
-  void loadData() {
-    expenses = Expense.listFromRawJson(_myBox.get("expenses"));
+  static void loadData() {
+    debugPrint("json $json");
+
+    loadExpenses().then((value) {
+      expenses = Expense.listFromRawJson(json);
+    });
   }
 
   void updateDatabase() {
     _myBox.put("expenses", Expense.listToRawJson(expenses));
+  }
+
+  static String json = "[]"; // Initialize as empty string
+  static File? expFile;
+
+  static Future<String> loadExpenses() async {
+    try {
+      Directory path = await getApplicationDocumentsDirectory();
+      final file = await File('${path.path}/fins.txt')
+          .create(recursive: true); // Create if not found
+      expFile = file;
+      final contents = await file.readAsString();
+      debugPrint("contents $contents");
+      json = contents.isEmpty ? "[]" : contents; // Handle empty file
+      expenses = Expense.listFromRawJson(json);
+      debugPrint("json load $json");
+      return contents.isEmpty ? "[]" : contents;
+    } catch (e) {
+      print("Error loading expenses: $e");
+      json = "[]"; // Set to empty string on error
+    }
+    return "[]";
+  }
+
+  static Future<void> saveExpenses(String newJson) async {
+    try {
+      Directory path = await getApplicationDocumentsDirectory();
+      print(path.path);
+      await File('${path.path}/fins.txt').writeAsString(newJson);
+      expFile = File('${path.path}/fins.txt');
+      print("write file \n\n\n\n");
+    } catch (e) {
+      print("Error saving expenses: $e");
+    }
   }
 }
 

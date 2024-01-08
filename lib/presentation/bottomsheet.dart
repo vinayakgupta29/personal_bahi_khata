@@ -12,31 +12,28 @@ class PaymntBottomSheet extends StatefulWidget {
 }
 
 class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
-  final _myBox = Hive.box("financeBox");
-  DataBase db = DataBase();
   var tags = ["Mandir", "Food", "Fast Food", "Donation", "Travel", "Other"];
   var selectedTags = [];
   List<Expense> _foundExpense = [];
-
   final _titlecontroller = TextEditingController();
   final _amountController = TextEditingController();
-
+  final DataBase db = DataBase();
   bool _isDebit = false;
 
   DateTime? _selectedDate = DateTime.now();
 
 // checkbox was tapped
-  void checkBoxChanged(Expense exp) {
-    setState(() {
-      exp.isDebit = !(exp.isDebit ?? false);
-    });
-    db.updateDatabase();
-  }
+  // void checkBoxChanged(Expense exp) {
+  //   setState(() {
+  //     exp.isDebit = !(exp.isDebit ?? false);
+  //   });
+  //   db.updateDatabase();
+  // }
 
   // save new task
   void saveNewTask() {
     setState(() {
-      db.expenses.add(Expense(
+      DataBase.expenses.add(Expense(
           name: _titlecontroller.text,
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           date: _selectedDate != null
@@ -46,18 +43,22 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
           isDebit: _isDebit));
       _titlecontroller.clear();
       _amountController.clear();
+      print(DataBase.expenses);
+      // db.updateDatabase();
+      var newJson = Expense.listToRawJson(DataBase.expenses);
+      debugPrint("newJson $newJson");
+      DataBase.saveExpenses(newJson);
     });
     Navigator.of(context).pop();
-    db.updateDatabase();
   }
 
   // delete task
-  void deleteTask(String id) {
-    setState(() {
-      db.expenses.removeWhere((item) => item.id == id);
-    });
-    db.updateDatabase();
-  }
+  // void deleteTask(String id) {
+  //   setState(() {
+  //     DataBase.expenses.removeWhere((item) => item.id == id);
+  //   });
+  //   db.updateDatabase();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +250,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                     ElevatedButton(
                         onPressed: () {
                           saveNewTask();
-                          //debugPrint("${_foundExpense}");
+                          debugPrint("${_foundExpense}");
                         },
                         child: const Text("Add"))
                   ],

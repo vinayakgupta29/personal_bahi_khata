@@ -55,8 +55,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   File? file;
   // text controller
-  String json = "";
-  var val = """[
+  String json = """[
+    
   {
     "name": "Expense1",
     "label": null,
@@ -136,103 +136,177 @@ class _MyHomePageState extends State<MyHomePage> {
     "date": "2023-05-22T00:00:00.000Z",
     "amount": "110",
     "isDebit": false
+  },{
+    "name":"expense11",
+    "label":"",
+    "id":"001",
+    "date":"2024-01-07T00:00:00.000Z",
+    "amount":"15",
+    "isDebit":true
+  },{
+    "name":"expense12",
+    "label":"",
+    "id":"002",
+    "date":"2024-01-08T00:00:00.000Z",
+    "amount":"75",
+    "isDebit":true
   }
 ]
 """;
-
-  Future<String?> loadPath() async {
-    var path = await getApplicationCacheDirectory();
-    debugPrint("$path");
-    return "${path.path}/fin.txt";
-  }
-
-  loadData() async {
-    if (file != null) {
-      // Read the bytes from the file
-      List<int> bytes = await file?.readAsBytes() ?? [];
-
-      // Convert the bytes to a JSON string
-      String jsonString = utf8.decode(bytes);
-      json = jsonString;
-    }
-  }
-
-  void writeJsonToFile(String jsonString, String filePath) async {
-    // Convert the JSON string to bytes
-    List<int> bytes = utf8.encode(jsonString);
-
-    // Write the bytes to a file
-    File file = File(filePath);
-    await file.writeAsBytes(bytes);
-  }
 
   @override
   void initState() {
     // if this is the 1st time ever open in the app, then create default data
     if (_myBox.get("expenses") == null) {
-      db.createInitialData();
-
-      loadPath().then((value) {
-        setState(() {
-          writeJsonToFile(json, value!);
-        });
-      });
+      DataBase.createInitialData();
     } else {
       // there already exists data
-      db.loadData();
     }
-    _foundExpense = db.expenses;
+    DataBase.loadExpenses().then((value) {
+      setState(() {
+        json = value;
+        DataBase.expenses = Expense.listFromRawJson(json);
+      });
+    });
     super.initState();
-    loadPath().then((value) {
-      setState(() {
-        file = File(value ?? "");
-      });
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    json = Expense.listToRawJson(db.expenses);
-    loadPath().then((value) {
-      setState(() {
-        writeJsonToFile("", value!);
-      });
-    });
-    debugPrint(json);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (json.isNotEmpty) {
-      _foundExpense = Expense.listFromRawJson(json);
-      _foundExpense.sort((a, b) {
-        DateTime dateA = DateTime.parse(a.date!);
-        DateTime dateB = DateTime.parse(b.date!);
-        return dateB.compareTo(dateA);
-      });
-      // Group objects by month and year
-      Map<String, List<Expense>> groupedObjects = {};
+    _foundExpense = DataBase.expenses;
+    _foundExpense.sort((a, b) {
+      DateTime dateA = DateTime.parse(a.date!);
+      DateTime dateB = DateTime.parse(b.date!);
+      return dateB.compareTo(dateA);
+    });
+    // // Group objects by month and year
+    Map<String, List<Expense>> groupedObjects = {};
 
-      for (Expense obj in _foundExpense) {
-        String monthYear = obj.getMonthYear();
-        if (!groupedObjects.containsKey(monthYear)) {
-          groupedObjects[monthYear] = [];
-        }
-        groupedObjects[monthYear]!.add(obj);
+    for (Expense obj in _foundExpense) {
+      String monthYear = obj.getMonthYear();
+      if (!groupedObjects.containsKey(monthYear)) {
+        groupedObjects[monthYear] = [];
       }
+      groupedObjects[monthYear]!.add(obj);
+    }
 
-      // Create a list of widgets for ListView.builder
-      double sum = 0;
-      groupedObjects.forEach((monthYear, objects) {
-        for (var obj in objects) {
-          obj.isDebit ?? true
-              ? sum -= double.parse(obj.amount ?? "0")
-              : sum += double.parse(obj.amount ?? "0");
-        }
+    // // Create a list of widgets for ListView.builder
+    // double sum = 0;
+    // groupedObjects.forEach((monthYear, objects) {
+    //   for (var obj in objects) {
+    //     obj.isDebit ?? true
+    //         ? sum -= double.parse(obj.amount ?? "0")
+    //         : sum += double.parse(obj.amount ?? "0");
+    //   }
 
-        widgets.add(
-          Container(
+    //   widgets.add(
+    //     Container(
+    //       color: bgcolor,
+    //       child: Column(
+    //         crossAxisAlignment: CrossAxisAlignment.start,
+    //         children: [
+    //           // Header with month and year
+    //           Row(
+    //             children: [
+    //               Text(
+    //                 monthYear,
+    //                 style: const TextStyle(
+    //                     fontSize: 20,
+    //                     fontWeight: FontWeight.bold,
+    //                     color: textcolor),
+    //               ),
+    //               const Spacer(),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(right: 8.0),
+    //                 child: Text(
+    //                   sum.toString(),
+    //                   style: const TextStyle(
+    //                       fontSize: 20,
+    //                       fontWeight: FontWeight.bold,
+    //                       color: textcolor),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //           const Divider(
+    //             thickness: 0.5,
+    //           ),
+    //           // List of items for that month and year
+    //           for (Expense obj in objects)
+    //             ListTile(
+    //               key: Key(obj.id ?? ""),
+    //               tileColor: itemcolor,
+    //               title: Text(
+    //                 obj.name ?? "hi",
+    //                 style: const TextStyle(color: textcolor),
+    //               ),
+    //               subtitle: Text(
+    //                 DateFormat.yMEd().format(
+    //                   DateTime.parse(obj.date!),
+    //                 ),
+    //                 style: const TextStyle(color: textcolor),
+    //               ),
+    //               trailing: Text(
+    //                 (obj.isDebit ?? false ? "- " : "+ ") +
+    //                     (obj.amount ?? "N/A"),
+    //                 style: TextStyle(
+    //                     fontSize: 20,
+    //                     fontWeight: FontWeight.w900,
+    //                     color:
+    //                         (obj.isDebit ?? false) ? Colors.red : Colors.green),
+    //               ),
+    //             ),
+    //           // Divider between months
+    //           const Divider(
+    //             thickness: 2,
+    //           ),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // });
+
+    return Scaffold(
+      backgroundColor: bgcolor,
+      appBar: AppBar(
+        title: const Text(
+          "Expenses",
+          style: TextStyle(
+              color: textcolor, fontSize: 24, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: Colors.black,
+        elevation: 10,
+        actions: [
+          IconButton(
+              onPressed: () {
+                DataBase.expFile != null
+                    ? Share.shareXFiles([XFile(DataBase.expFile?.path ?? "")])
+                    : null;
+              },
+              icon: const Icon(Icons.share))
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: groupedObjects.length * 2, // *2 for dividers
+        itemBuilder: (context, index) {
+          if (index.isOdd) {
+            // Divider
+            return const Divider(thickness: 2);
+          }
+
+          // Header or List Item
+          int headerIndex = index ~/ 2;
+          String monthYear = groupedObjects.keys.elementAt(headerIndex);
+          List<Expense> objects = groupedObjects[monthYear]!;
+
+          double sum = 0;
+          for (var obj in objects) {
+            obj.isDebit ?? true
+                ? sum -= double.parse(obj.amount ?? "0")
+                : sum += double.parse(obj.amount ?? "0");
+          }
+
+          return Container(
             color: bgcolor,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,6 +340,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // List of items for that month and year
                 for (Expense obj in objects)
                   ListTile(
+                    key: Key(obj.id ?? ""),
                     tileColor: itemcolor,
                     title: Text(
                       obj.name ?? "hi",
@@ -288,43 +363,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               : Colors.green),
                     ),
                   ),
-                // Divider between months
-                const Divider(
-                  thickness: 2,
-                ),
               ],
             ),
-          ),
-        );
-      });
-    }
-
-    return Scaffold(
-      backgroundColor: bgcolor,
-      appBar: AppBar(
-        title: const Text(
-          "Expenses",
-          style: TextStyle(
-              color: textcolor, fontSize: 24, fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: Colors.black,
-        elevation: 10,
-        actions: [
-          IconButton(
-              onPressed: () {
-                file != null
-                    ? Share.shareXFiles([XFile(file?.path ?? "")])
-                    : null;
-              },
-              icon: const Icon(Icons.share))
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: widgets.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0, left: 8),
-            child: widgets[index],
           );
         },
       )
