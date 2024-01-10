@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
@@ -154,6 +154,14 @@ class _MyHomePageState extends State<MyHomePage> {
 ]
 """;
 
+  // delete task
+  void deleteTask(String id) {
+    setState(() {
+      DataBase.expenses.removeWhere((item) => item.id == id);
+    });
+    db.updateDatabase();
+  }
+
   @override
   void initState() {
     // if this is the 1st time ever open in the app, then create default data
@@ -174,6 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     _foundExpense = DataBase.expenses;
+    print(_foundExpense);
     _foundExpense.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date!);
       DateTime dateB = DateTime.parse(b.date!);
@@ -291,7 +300,9 @@ class _MyHomePageState extends State<MyHomePage> {
         itemBuilder: (context, index) {
           if (index.isOdd) {
             // Divider
-            return const Divider(thickness: 2);
+            return Container(
+              height: 0.000005,
+            );
           }
 
           // Header or List Item
@@ -312,56 +323,103 @@ class _MyHomePageState extends State<MyHomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header with month and year
-                Row(
-                  children: [
-                    Text(
-                      monthYear,
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: textcolor),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
-                        sum.toString(),
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: textcolor),
+                SizedBox(
+                  height: 50,
+                  width: MediaQuery.of(context).size.width,
+                  child: Card(
+                    color: bgcolor,
+                    elevation: 10,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Text(
+                            monthYear,
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: textcolor),
+                          ),
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              sum.toString(),
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: sum >= 0 ? Colors.green : Colors.red),
+                            ),
+                          )
+                        ],
                       ),
-                    )
-                  ],
+                    ),
+                  ),
                 ),
-                const Divider(
-                  thickness: 0.5,
-                ),
+                // const Divider(
+                //   thickness: 0.5,
+                // ),
                 // List of items for that month and year
                 for (Expense obj in objects)
-                  ListTile(
-                    key: Key(obj.id ?? ""),
-                    tileColor: itemcolor,
-                    title: Text(
-                      obj.name ?? "hi",
-                      style: const TextStyle(color: textcolor),
-                    ),
-                    subtitle: Text(
-                      DateFormat.yMEd().format(
-                        DateTime.parse(obj.date!),
+                  Column(
+                    children: [
+                      Slidable(
+                        endActionPane: ActionPane(
+                            motion: const StretchMotion(),
+                            children: [
+                              SlidableAction(
+                                onPressed: (context) =>
+                                    deleteTask(obj.id ?? ""),
+                                label: "DELETE",
+                                backgroundColor: Colors.red,
+                              )
+                            ]),
+                        child: ListTile(
+                          key: Key(obj.id ?? ""),
+                          tileColor: itemcolor,
+                          title: Text(
+                            obj.name ?? "hi",
+                            style: const TextStyle(color: textcolor),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat.yMEd().format(
+                                  DateTime.parse(obj.date!),
+                                ),
+                                style: const TextStyle(color: textcolor),
+                              ),
+                              SizedBox(
+                                height: 50,
+                                width: 100,
+                                child: ListView.builder(
+                                    shrinkWrap: true,
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: obj.label?.length ?? 0,
+                                    itemBuilder: (context, ind) => Chip(
+                                        labelStyle:
+                                            const TextStyle(fontSize: 12),
+                                        label: Text(obj.label?[ind] ?? "hi"))),
+                              )
+                            ],
+                          ),
+                          trailing: Text(
+                            (obj.isDebit ?? false ? "- " : "+ ") +
+                                (obj.amount ?? "N/A"),
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: (obj.isDebit ?? false)
+                                    ? Colors.red
+                                    : Colors.green),
+                          ),
+                        ),
                       ),
-                      style: const TextStyle(color: textcolor),
-                    ),
-                    trailing: Text(
-                      (obj.isDebit ?? false ? "- " : "+ ") +
-                          (obj.amount ?? "N/A"),
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: (obj.isDebit ?? false)
-                              ? Colors.red
-                              : Colors.green),
-                    ),
+                      const Divider(
+                        color: hintcol,
+                      )
+                    ],
                   ),
               ],
             ),
@@ -374,15 +432,30 @@ class _MyHomePageState extends State<MyHomePage> {
       //       return
       //     }),
       ,
+
+      drawer: Drawer(),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).size.height * 0.07, right: 10),
         child: FloatingActionButton(
           onPressed: () {
-            showModalBottomSheet(
-                isScrollControlled: true,
-                context: context,
-                builder: (_) => const PaymntBottomSheet());
+            Navigator.push(
+                context,
+                PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const PaymntBottomSheet(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.8, 0.8);
+                      const end = Offset.zero;
+                      const curve = Curves.fastEaseInToSlowEaseOut;
+                      var tween = Tween(begin: begin, end: end)
+                          .chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    }));
           },
           child: const Icon(Icons.add),
         ),

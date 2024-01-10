@@ -27,7 +27,7 @@ class DataBase {
   }
 
   void updateDatabase() {
-    _myBox.put("expenses", Expense.listToRawJson(expenses));
+    _myBox.put("expenses", Expense.listToJson(expenses));
   }
 
   static String json = "[]"; // Initialize as empty string
@@ -36,6 +36,7 @@ class DataBase {
   static Future<String> loadExpenses() async {
     try {
       Directory path = await getApplicationDocumentsDirectory();
+
       final file = await File('${path.path}/fins.txt')
           .create(recursive: true); // Create if not found
       expFile = file;
@@ -67,7 +68,7 @@ class DataBase {
 
 class Expense {
   String? name;
-  String? label;
+  List<String>? label;
   String? id;
   String? date;
   String? amount;
@@ -88,7 +89,9 @@ class Expense {
 
   factory Expense.fromJson(Map<String, dynamic> json) => Expense(
         name: json["name"],
-        label: json["label"],
+        label: json["label"] == null
+            ? []
+            : List<String>.from(json["label"]!.map((x) => x)),
         id: json["id"],
         date: json["date"],
         amount: json["amount"],
@@ -105,14 +108,15 @@ class Expense {
       };
 
   static List<Expense> listFromRawJson(String str) {
-    List<dynamic> list = json.decode(str);
+    Map<String, dynamic> jsonRes = json.decode(str);
+    List list = jsonRes['expense'];
     return List<Expense>.from(list.map((item) => Expense.fromJson(item)));
   }
 
-  static String listToRawJson(List<Expense> list) {
+  static List<Map<String, dynamic>> listToJson(List<Expense> list) {
     List<Map<String, dynamic>> jsonList =
         List<Map<String, dynamic>>.from(list.map((item) => item.toJson()));
-    return json.encode(jsonList);
+    return jsonList;
   }
 
   String getMonthYear() {
