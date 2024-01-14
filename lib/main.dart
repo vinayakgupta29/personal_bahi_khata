@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +7,6 @@ import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/presentation/bottomsheet.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 
 void main() async {
   await Hive.initFlutter();
@@ -180,9 +178,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    DataBase.loadData();
+  }
+
+  @override
   Widget build(BuildContext context) {
     _foundExpense = DataBase.expenses;
-    print(_foundExpense);
+    debugPrint("$_foundExpense");
     _foundExpense.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date!);
       DateTime dateB = DateTime.parse(b.date!);
@@ -392,15 +396,20 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                               SizedBox(
                                 height: 50,
-                                width: 100,
+                                width: MediaQuery.of(context).size.width - 100,
                                 child: ListView.builder(
                                     shrinkWrap: true,
                                     scrollDirection: Axis.horizontal,
                                     itemCount: obj.label?.length ?? 0,
-                                    itemBuilder: (context, ind) => Chip(
-                                        labelStyle:
-                                            const TextStyle(fontSize: 12),
-                                        label: Text(obj.label?[ind] ?? "hi"))),
+                                    itemBuilder: (context, ind) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0),
+                                          child: Chip(
+                                              labelStyle:
+                                                  const TextStyle(fontSize: 12),
+                                              label: Text(
+                                                  obj.label?[ind] ?? "hi")),
+                                        )),
                               )
                             ],
                           ),
@@ -432,8 +441,6 @@ class _MyHomePageState extends State<MyHomePage> {
       //       return
       //     }),
       ,
-
-      drawer: Drawer(),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).size.height * 0.07, right: 10),

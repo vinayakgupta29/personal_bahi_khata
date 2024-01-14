@@ -40,6 +40,7 @@ class DataBase {
       final file = await File('${path.path}/fins.txt')
           .create(recursive: true); // Create if not found
       expFile = file;
+      file.deleteSync();
       final contents = await file.readAsString();
       debugPrint("contents $contents");
       json = contents.isEmpty ? "[]" : contents; // Handle empty file
@@ -47,7 +48,7 @@ class DataBase {
       debugPrint("json load $json");
       return contents.isEmpty ? "[]" : contents;
     } catch (e) {
-      print("Error loading expenses: $e");
+      debugPrint("Error loading expenses: $e");
       json = "[]"; // Set to empty string on error
     }
     return "[]";
@@ -56,12 +57,12 @@ class DataBase {
   static Future<void> saveExpenses(String newJson) async {
     try {
       Directory path = await getApplicationDocumentsDirectory();
-      print(path.path);
+      debugPrint(path.path);
       await File('${path.path}/fins.txt').writeAsString(newJson);
       expFile = File('${path.path}/fins.txt');
-      print("write file \n\n\n\n");
+      debugPrint("write file \n\n\n\n");
     } catch (e) {
-      print("Error saving expenses: $e");
+      debugPrint("Error saving expenses: $e");
     }
   }
 }
