@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance_tracker/data/database.dart';
+import 'package:personal_finance_tracker/main.dart';
 
 class PaymntBottomSheet extends StatefulWidget {
   const PaymntBottomSheet({super.key});
@@ -49,8 +50,9 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
           isDebit: _isDebit));
       _titlecontroller.clear();
       _amountController.clear();
-      debugPrint("${DataBase.expenses}");
       // db.updateDatabase();
+
+      myNotifier.update(DataBase.expenses);
       var newList = Expense.listToJson(DataBase.expenses);
       var newJson = jsonEncode({"expense": newList});
       debugPrint("newJson $newJson");
@@ -70,6 +72,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
+              height: MediaQuery.of(context).size.height,
               child: Column(
                 children: [
                   TextField(

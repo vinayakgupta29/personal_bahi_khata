@@ -2,20 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 class DataBase {
   static List<Expense> expenses = [];
-  final _myBox = Hive.box("financeBox");
 
   static void createInitialData() {
     expenses = [];
-  }
-
-  void delete() {
-    _myBox.delete("expenses");
   }
 
   static void loadData() {
@@ -27,7 +21,9 @@ class DataBase {
   }
 
   void updateDatabase() {
-    _myBox.put("expenses", Expense.listToJson(expenses));
+    //_myBox.put("expenses", Expense.listToJson(expenses));
+    Map<String, dynamic> newJson = {"expense": DataBase.expenses};
+    saveExpenses(jsonEncode(newJson));
   }
 
   static String json = "[]"; // Initialize as empty string
@@ -40,13 +36,14 @@ class DataBase {
       final file = await File('${path.path}/fins.txt')
           .create(recursive: true); // Create if not found
       expFile = file;
-      file.deleteSync();
       final contents = await file.readAsString();
       debugPrint("contents $contents");
-      json = contents.isEmpty ? "[]" : contents; // Handle empty file
+      json = contents.isEmpty
+          ? jsonEncode({"expense": []})
+          : contents; // Handle empty file
       expenses = Expense.listFromRawJson(json);
       debugPrint("json load $json");
-      return contents.isEmpty ? "[]" : contents;
+      return contents.isEmpty ? jsonEncode({"expense": []}) : contents;
     } catch (e) {
       debugPrint("Error loading expenses: $e");
       json = "[]"; // Set to empty string on error
