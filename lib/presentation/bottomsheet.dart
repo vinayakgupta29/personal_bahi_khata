@@ -14,13 +14,13 @@ class PaymntBottomSheet extends StatefulWidget {
 }
 
 class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
-  var tags = ["Mandir", "Food", "Fast Food", "Donation", "Travel", "Other"];
+  var tags = ["Food", "Fast Food", "Donation", "Travel", "Other"];
   List<String> selectedTags = [];
   final List<Expense> _foundExpense = [];
   final _titlecontroller = TextEditingController();
   final _amountController = TextEditingController();
   final DataBase db = DataBase();
-  bool _isDebit = false;
+  bool _isDebit = true;
   DateTime now = DateTime.now();
   DateTime? _selectedDate = DateTime.now();
 
@@ -52,7 +52,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
       _amountController.clear();
       // db.updateDatabase();
 
-      myNotifier.update(DataBase.expenses);
+      expenseNotifier.update(DataBase.expenses);
       var newList = Expense.listToJson(DataBase.expenses);
       var newJson = jsonEncode({"expense": newList});
       debugPrint("newJson $newJson");
@@ -64,21 +64,26 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6 +
-              (MediaQuery.of(context).viewInsets.bottom),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
+            child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextField(
+                  TextFormField(
                     controller: _titlecontroller,
-                    decoration: const InputDecoration(label: Text("Name")),
+                    decoration: InputDecoration(
+                        label: const Text("Name"),
+                        errorText: _validate ? "Please Fill the Name" : null),
                     textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(
                     height: 20,
@@ -98,10 +103,13 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                     optionsViewBuilder: (BuildContext context,
                         AutocompleteOnSelected<String> onSelected,
                         Iterable<String> options) {
-                      return Material(
-                        type: MaterialType.transparency,
-                        child: SingleChildScrollView(
-                          child: Column(
+                      return ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: Material(
+                          color: Colors.white,
+                          child: ListView(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
                             children: options.map((opt) {
                               return InkWell(
                                 onTap: () {
@@ -110,6 +118,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(right: 25.0),
                                   child: Card(
+                                    color: Colors.white,
                                     child: Container(
                                       width: MediaQuery.of(context).size.width -
                                           20,
@@ -186,10 +195,14 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                                 focusNode: focusNode,
                                 onSubmitted: (String value) {
                                   if (!selectedTags.contains(value)) {
-                                    setState(() {
-                                      selectedTags.add(value);
-                                    });
+                                    if (value.isNotEmpty) {
+                                      setState(() {
+                                        selectedTags.add(value);
+                                      });
+                                    }
                                     selectedTagController.clear();
+                                    FocusManager.instance.primaryFocus
+                                        ?.unfocus();
                                   }
                                 },
                               ),
@@ -227,7 +240,9 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                         showDatePicker(
                                 context: context,
                                 firstDate: DateTime(now.year - 5),
-                                lastDate: DateTime(2200))
+                                lastDate: DateTime(2200),
+                                initialEntryMode:
+                                    DatePickerEntryMode.calendarOnly)
                             .then((picked) {
                           if (picked != null) {
                             setState(() {

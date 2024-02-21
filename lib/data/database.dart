@@ -7,6 +7,10 @@ import 'package:path_provider/path_provider.dart';
 
 class DataBase {
   static List<Expense> expenses = [];
+  static Set<String> uniqueTags = {};
+  static List<String> selectedTags = [];
+  static DateTime? selectedDate;
+  static List<int> uniqueyears = [];
 
   static void createInitialData() {
     expenses = [];

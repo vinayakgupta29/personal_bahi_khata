@@ -4,7 +4,7 @@ import 'dart:async';
 
 // Define a simple notifier class
 class ExpenseNotifier {
-  final _controller = StreamController<List<Expense>>();
+  final _controller = StreamController<List<Expense>>.broadcast();
 
   Stream<List<Expense>> get stream => _controller.stream;
 
