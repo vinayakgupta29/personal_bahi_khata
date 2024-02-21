@@ -1,13 +1,13 @@
 # Bahi Khata
-[Download Apk](https://github.com/vinayakgupta29/personal_finance_tracker/releases/download/alpha/bahi_kahta.apk)
+[Download Apk](https://github.com/vinayakgupta29/bahi_khata/releases/download/alpha/bahi_kahta.apk)
 <div style="display: flex; justify-content: space-between;">
-   <div style="text-align: center;"> <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-11-53-37_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 1" width="200"><p>Pic 1</p></div>
-   <div style="text-align: center;"> <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-12-00-42_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 2" width="200"><p>Pic 2</p></div>
-<div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-12-43-34_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 3</p></div>
-  <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-12-50-50_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 4</p></div>
-  <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-13-07-78_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 5</p></div>
-    <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-13-10-54_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 6</p></div>
-    <div style="text-align: center;"><img src="https://github.com/vinayakgupta29/personal_finance_tracker/blob/main/assets/Screenshot_2024-02-09-17-43-54-58_bda9946562fe04081165a9124e0fc1f4.jpg" width="200" ><p>Pic 7</p></div>
+   <div style="text-align: center;"> <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-11-53-37_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 1" width="200"><p>Pic 1</p></div>
+   <div style="text-align: center;"> <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-12-00-42_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 2" width="200"><p>Pic 2</p></div>
+<div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-12-43-34_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 3</p></div>
+  <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-12-50-50_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 4</p></div>
+  <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-13-07-78_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 5</p></div>
+    <div style="text-align: center;">    <img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-13-10-54_bda9946562fe04081165a9124e0fc1f4.jpg" alt="Image 3" width="200"><p>Pic 6</p></div>
+    <div style="text-align: center;"><img src="https://github.com/vinayakgupta29/bahi_khata/blob/main/assets/Screenshot_2024-02-09-17-43-54-58_bda9946562fe04081165a9124e0fc1f4.jpg" width="200" ><p>Pic 7</p></div>
   
 </div>
 
