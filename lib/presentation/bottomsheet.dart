@@ -58,6 +58,11 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
       debugPrint("newJson $newJson");
       DataBase.saveExpenses(newJson);
     });
+    for (var tag in selectedTags) {
+      if (!DataBase.uniqueTags.contains(tag)) {
+        DataBase.uniqueTags.add(tag);
+      }
+    }
     Navigator.of(context).pop();
   }
 
@@ -99,141 +104,147 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                         label: const Text("Amount"),
                         errorText: _validate ? "Please Fill the Amount" : null),
                   ),
-                  Autocomplete<String>(
-                    optionsViewBuilder: (BuildContext context,
-                        AutocompleteOnSelected<String> onSelected,
-                        Iterable<String> options) {
-                      return ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: Material(
-                          color: Colors.white,
-                          child: ListView(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            children: options.map((opt) {
-                              return InkWell(
-                                onTap: () {
-                                  onSelected(opt);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 25.0),
-                                  child: Card(
-                                    color: Colors.white,
-                                    child: Container(
-                                      width: MediaQuery.of(context).size.width -
-                                          20,
-                                      padding: const EdgeInsets.all(10),
-                                      child: Text(opt),
+                  Padding(
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom),
+                    child: Autocomplete<String>(
+                      optionsViewBuilder: (BuildContext context,
+                          AutocompleteOnSelected<String> onSelected,
+                          Iterable<String> options) {
+                        return ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: Material(
+                            color: Colors.white,
+                            child: ListView(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              children: options.map((opt) {
+                                return InkWell(
+                                  onTap: () {
+                                    onSelected(opt);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 25.0),
+                                    child: Card(
+                                      color: Colors.white,
+                                      child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width -
+                                                20,
+                                        padding: const EdgeInsets.all(10),
+                                        child: Text(opt),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
+                                );
+                              }).toList(),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    fieldViewBuilder: (BuildContext context,
-                        TextEditingController selectedTagController,
-                        FocusNode focusNode,
-                        VoidCallback onFieldSubmitted) {
-                      _selectedTagController = selectedTagController;
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Tags",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
-                              Wrap(
-                                spacing:
-                                    8.0, // Horizontal spacing between widgets
-                                runSpacing:
-                                    8.0, // Vertical spacing between lines
-                                children: selectedTags
-                                    .map((e) => Chip(
-                                          backgroundColor: Colors.blueGrey,
-                                          labelPadding:
-                                              const EdgeInsets.only(left: 8.0),
-                                          label: Text(
-                                            e,
-                                            style: const TextStyle(
-                                                color: Colors.white),
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                              side: const BorderSide(
-                                                  width: 0.5,
-                                                  color: Colors.white54),
-                                              borderRadius:
-                                                  BorderRadius.circular(20)),
-                                          deleteIcon: const Icon(
-                                            Icons.close,
-                                            size: 18,
-                                            color: Colors.yellow,
-                                          ),
-                                          onDeleted: () {
-                                            setState(() {
-                                              selectedTags.remove(e);
-                                            });
-                                          },
-                                        ))
-                                    .toList(),
-                              ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  labelText: "Enter Tag",
-                                  hintStyle: TextStyle(
-                                      color: Colors.white54), // Hint text color
+                        );
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController selectedTagController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted) {
+                        _selectedTagController = selectedTagController;
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("Tags",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
+                                Wrap(
+                                  spacing:
+                                      8.0, // Horizontal spacing between widgets
+                                  runSpacing:
+                                      8.0, // Vertical spacing between lines
+                                  children: selectedTags
+                                      .map((e) => Chip(
+                                            backgroundColor: Colors.blueGrey,
+                                            labelPadding: const EdgeInsets.only(
+                                                left: 8.0),
+                                            label: Text(
+                                              e,
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                                side: const BorderSide(
+                                                    width: 0.5,
+                                                    color: Colors.white54),
+                                                borderRadius:
+                                                    BorderRadius.circular(20)),
+                                            deleteIcon: const Icon(
+                                              Icons.close,
+                                              size: 18,
+                                              color: Colors.yellow,
+                                            ),
+                                            onDeleted: () {
+                                              setState(() {
+                                                selectedTags.remove(e);
+                                              });
+                                            },
+                                          ))
+                                      .toList(),
                                 ),
-                                controller: selectedTagController,
-                                focusNode: focusNode,
-                                onSubmitted: (String value) {
-                                  if (!selectedTags.contains(value)) {
-                                    if (value.isNotEmpty) {
-                                      setState(() {
-                                        selectedTags.add(value);
-                                      });
+                                TextField(
+                                  decoration: const InputDecoration(
+                                    labelText: "Enter Tag",
+                                    hintStyle: TextStyle(
+                                        color:
+                                            Colors.white54), // Hint text color
+                                  ),
+                                  controller: selectedTagController,
+                                  focusNode: focusNode,
+                                  onSubmitted: (String value) {
+                                    if (!selectedTags.contains(value)) {
+                                      if (value.isNotEmpty) {
+                                        setState(() {
+                                          selectedTags.add(value);
+                                        });
+                                      }
+                                      selectedTagController.clear();
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
                                     }
-                                    selectedTagController.clear();
-                                    FocusManager.instance.primaryFocus
-                                        ?.unfocus();
-                                  }
-                                },
-                              ),
-                            ],
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text == '') {
-                        return tags;
-                      } else {
-                        List<String> matches = <String>[];
-                        matches.addAll(tags);
+                        );
+                      },
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return tags;
+                        } else {
+                          List<String> matches = <String>[];
+                          matches.addAll(tags);
 
-                        matches.retainWhere((s) {
-                          return s
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase());
-                        });
-                        return matches;
-                      }
-                    },
-                    onSelected: (String option) {
-                      if (!selectedTags.contains(option)) {
-                        setState(() {
-                          selectedTags.add(option);
-                          _selectedTagController.clear();
-                        });
-                      }
-                    },
+                          matches.retainWhere((s) {
+                            return s
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase());
+                          });
+                          return matches;
+                        }
+                      },
+                      onSelected: (String option) {
+                        if (!selectedTags.contains(option)) {
+                          setState(() {
+                            selectedTags.add(option);
+                            _selectedTagController.clear();
+                          });
+                        }
+                      },
+                    ),
                   ),
                   TextButton(
                       onPressed: () {

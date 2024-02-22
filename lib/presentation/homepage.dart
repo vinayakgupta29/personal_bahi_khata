@@ -192,7 +192,7 @@ class _HomePageState extends State<HomePage> {
           var filterObjects = _foundExpense.where((obj) {
             // Return true if all tags in the object's list are contained within DB.selectedTags
             return ((DataBase.selectedTags.isNotEmpty
-                    ? obj.label?.every(
+                    ? obj.label?.any(
                             (tag) => DataBase.selectedTags.contains(tag)) ??
                         true
                     : true) &&
@@ -344,10 +344,10 @@ class _HomePageState extends State<HomePage> {
                         double sum = 0;
                         for (var obj in objects) {
                           obj.isDebit ?? true
-                              ? sum -= double.parse(obj.amount ?? "0")
-                              : sum += double.parse(obj.amount ?? "0");
+                              ? sum -= (double.parse(obj.amount ?? "0") * 100)
+                              : sum += (double.parse(obj.amount ?? "0") * 100);
                         }
-
+                        sum /= 100;
                         return Container(
                           color: bgcolor,
                           child: Column(
