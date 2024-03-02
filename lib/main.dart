@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:personal_finance_tracker/data/file_handler.dart';
 import 'package:personal_finance_tracker/data/statemanager.dart';
-import 'package:personal_finance_tracker/presentation/homepage.dart';
 
 final expenseNotifier = ExpenseNotifier();
 
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(title: 'Personal Bahi Khata Home Page'),
+      home: const FileHandler(),
     );
   }
 }

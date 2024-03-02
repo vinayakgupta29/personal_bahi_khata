@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/main.dart';
 import 'package:personal_finance_tracker/presentation/bottomsheet.dart';
@@ -10,9 +11,9 @@ import 'package:personal_finance_tracker/presentation/searchpage.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
-
-  final String title;
+  const HomePage({
+    super.key,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -124,25 +125,37 @@ class _HomePageState extends State<HomePage> {
 ]
 """;
 
-  bool _isSearch = false;
-
   // delete task
-  void deleteTask(String id) {
+  void deleteExpense(String id) {
     setState(() {
       DataBase.expenses.removeWhere((item) => item.id == id);
     });
     db.updateDatabase();
-    DataBase.loadExpenses().then((value) {
-      setState(() {
-        json = value;
-        debugPrint(json.toString());
-        DataBase.expenses = Expense.listFromRawJson(json);
-      });
+    debugPrint(DataBase.expenses.toString());
+    setState(() {
+      expenseNotifier.update(DataBase.expenses);
     });
+  }
+
+  requestStoragePermission() async {
+    bool isDenied = await Permission.storage.isDenied;
+    if (isDenied) {
+      await Permission.storage.request();
+    }
+    var status = await Permission.storage.status;
+    if (status != PermissionStatus.granted && mounted) {
+      showDialog(
+          context: context,
+          builder: (_) => const AlertDialog(
+                title: Text(
+                    "Please grant Storage permission it is necessary"),
+              ));
+    }
   }
 
   @override
   void initState() {
+    requestStoragePermission();
     DataBase.loadExpenses().then((value) {
       setState(() {
         json = value;
@@ -152,9 +165,11 @@ class _HomePageState extends State<HomePage> {
         for (Expense obj in DataBase.expenses) {
           if (obj.date != null) {
             var year = DateTime.parse(obj.date!).year;
+            debugPrint("$year ${DataBase.uniqueyears.contains(year)}");
             if (!DataBase.uniqueyears.contains(year)) {
               DataBase.uniqueyears.add(year);
             }
+            debugPrint("sa ${DataBase.uniqueyears}");
           }
           if (obj.label != null) {
             allTags.addAll(obj.label!);
@@ -179,8 +194,10 @@ class _HomePageState extends State<HomePage> {
         stream: expenseNotifier.stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-                height: 100, width: 100, child: CircularProgressIndicator());
+            return ConstrainedBox(
+                constraints:
+                    const BoxConstraints(maxHeight: 100, maxWidth: 100),
+                child: const CircularProgressIndicator());
           }
           _foundExpense = snapshot.data ?? [];
           debugPrint("found length ${DataBase.expenses.length}");
@@ -198,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                     : true) &&
                 (dateFilter(obj)));
           }).toList();
-          debugPrint("selected $DataBase.selectedTags filter $filterObjects");
+          debugPrint("selected ${DataBase.selectedTags} filter $filterObjects");
           // // Group objects by month and year
           Map<String, List<Expense>> groupedObjects = {};
           var allTags = [];
@@ -312,7 +329,6 @@ class _HomePageState extends State<HomePage> {
                                       setState(() {});
                                     },
                                   )));
-                      debugPrint(_isSearch.toString());
                     },
                     icon: const Icon(
                       Icons.search_outlined,
@@ -403,7 +419,7 @@ class _HomePageState extends State<HomePage> {
                                           children: [
                                             SlidableAction(
                                               onPressed: (context) =>
-                                                  deleteTask(obj.id ?? ""),
+                                                  deleteExpense(obj.id ?? ""),
                                               label: "DELETE",
                                               backgroundColor: Colors.red,
                                             )

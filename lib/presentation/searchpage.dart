@@ -1,11 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 
 class SearchPage extends StatefulWidget {
   final VoidCallback? onPopCallback;
+  final String? filePath;
 
-  const SearchPage({super.key, required this.onPopCallback});
+  const SearchPage({super.key, required this.onPopCallback, this.filePath});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -15,9 +17,111 @@ class _SearchPageState extends State<SearchPage> {
   int selectedMonth = DataBase.selectedDate?.month ?? 0;
 
   int selectedYear = DataBase.selectedDate?.year ?? 0;
+  Map<String, dynamic> jsonda = {
+    "expenses": [
+      {
+        "name": "Expense1",
+        "label": null,
+        "id": "1641345460000",
+        "date": "2023-01-01T00:00:00.000Z",
+        "amount": "100",
+        "isDebit": true
+      },
+      {
+        "name": "Expense2",
+        "label": null,
+        "id": "1642246460000",
+        "date": "2023-01-15T00:00:00.000Z",
+        "amount": "150",
+        "isDebit": false
+      },
+      {
+        "name": "Expense3",
+        "label": null,
+        "id": "1643751060000",
+        "date": "2023-02-02T00:00:00.000Z",
+        "amount": "80",
+        "isDebit": true
+      },
+      {
+        "name": "Expense4",
+        "label": null,
+        "id": "1645395260000",
+        "date": "2023-02-20T00:00:00.000Z",
+        "amount": "120",
+        "isDebit": false
+      },
+      {
+        "name": "Expense5",
+        "label": null,
+        "id": "1646549460000",
+        "date": "2023-03-05T00:00:00.000Z",
+        "amount": "200",
+        "isDebit": true
+      },
+      {
+        "name": "Expense6",
+        "label": null,
+        "id": "1647747060000",
+        "date": "2023-03-18T00:00:00.000Z",
+        "amount": "90",
+        "isDebit": false
+      },
+      {
+        "name": "Expense7",
+        "label": null,
+        "id": "1649107260000",
+        "date": "2023-04-10T00:00:00.000Z",
+        "amount": "180",
+        "isDebit": true
+      },
+      {
+        "name": "Expense8",
+        "label": null,
+        "id": "1650015060000",
+        "date": "2023-04-25T00:00:00.000Z",
+        "amount": "130",
+        "isDebit": false
+      },
+      {
+        "name": "Expense9",
+        "label": null,
+        "id": "1651403860000",
+        "date": "2023-05-08T00:00:00.000Z",
+        "amount": "160",
+        "isDebit": true
+      },
+      {
+        "name": "Expense10",
+        "label": null,
+        "id": "1652305460000",
+        "date": "2023-05-22T00:00:00.000Z",
+        "amount": "110",
+        "isDebit": false
+      },
+      {
+        "name": "expense11",
+        "label": "",
+        "id": "001",
+        "date": "2024-01-07T00:00:00.000Z",
+        "amount": "15",
+        "isDebit": true
+      },
+      {
+        "name": "expense12",
+        "label": "",
+        "id": "002",
+        "date": "2024-01-08T00:00:00.000Z",
+        "amount": "75",
+        "isDebit": true
+      }
+    ]
+  };
 
   @override
   Widget build(BuildContext context) {
+
+    debugPrint("selected date : ${DataBase.selectedDate?.toIso8601String()}");
     return PopScope(
       canPop: true,
       onPopInvoked: (val) {

@@ -13,7 +13,8 @@ class PaymntBottomSheet extends StatefulWidget {
   State<PaymntBottomSheet> createState() => _PaymntBottomSheetState();
 }
 
-class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
+class _PaymntBottomSheetState extends State<PaymntBottomSheet>
+    with TickerProviderStateMixin {
   var tags = ["Food", "Fast Food", "Donation", "Travel", "Other"];
   List<String> selectedTags = [];
   final List<Expense> _foundExpense = [];
@@ -22,12 +23,17 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
   final DataBase db = DataBase();
   bool _isDebit = true;
   DateTime now = DateTime.now();
-  DateTime? _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
 
   bool _validate = false;
 
   late TextEditingController _selectedTagController;
 
+  late Animation _creditAnimation;
+  late Animation _debitAnimation;
+
+  late AnimationController _creditAnimationController;
+  late AnimationController _debitAnimationController;
 // checkbox was tapped
   // void checkBoxChanged(Expense exp) {
   //   setState(() {
@@ -37,15 +43,13 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
   // }
 
   // save new task
-  void saveNewTask() {
+  void saveNewExpense() {
     setState(() {
       DataBase.expenses.add(Expense(
           name: _titlecontroller.text,
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          date: _selectedDate != null
-              ? _selectedDate?.toIso8601String()
-              : DateTime.now().toIso8601String(),
-          amount: (_amountController.text),
+          date: _selectedDate.toIso8601String(),
+          amount: double.parse(_amountController.text).toString(),
           label: selectedTags,
           isDebit: _isDebit));
       _titlecontroller.clear();
@@ -54,7 +58,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
 
       expenseNotifier.update(DataBase.expenses);
       var newList = Expense.listToJson(DataBase.expenses);
-      var newJson = jsonEncode({"expense": newList});
+      var newJson = jsonEncode({"expenses": newList});
       debugPrint("newJson $newJson");
       DataBase.saveExpenses(newJson);
     });
@@ -63,7 +67,55 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
         DataBase.uniqueTags.add(tag);
       }
     }
+    if (!DataBase.uniqueyears.contains(_selectedDate.year)) {
+      DataBase.uniqueyears.add(_selectedDate.year);
+    }
+    DataBase.selectedTags = [];
+    DataBase.selectedDate = null;
     Navigator.of(context).pop();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _creditAnimationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 200));
+    _debitAnimationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 250));
+    _creditAnimation =
+        Tween(begin: 0.0, end: -10.0).animate(_creditAnimationController);
+    _debitAnimation =
+        Tween(begin: 0.0, end: 10.0).animate(_debitAnimationController);
+    _creditAnimationController.reset();
+  }
+
+  void _animatePlusIcon() {
+    // Forward, reverse, reset the animation for each loop
+    _creditAnimationController.forward();
+    Future.delayed(const Duration(milliseconds: 250), () {
+      _creditAnimationController.reverse();
+      Future.delayed(const Duration(milliseconds: 250), () {
+        _creditAnimationController.reset();
+      });
+    });
+  }
+
+  void _animateMinusIcon() {
+    // Forward, reverse, reset the animation for each loop
+    _debitAnimationController.forward();
+    Future.delayed(const Duration(milliseconds: 250), () {
+      _debitAnimationController.reverse();
+      Future.delayed(const Duration(milliseconds: 250), () {
+        _debitAnimationController.reset();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _creditAnimationController.dispose();
+    _debitAnimationController.dispose();
   }
 
   @override
@@ -77,32 +129,43 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextFormField(
-                    controller: _titlecontroller,
-                    decoration: InputDecoration(
-                        label: const Text("Name"),
-                        errorText: _validate ? "Please Fill the Name" : null),
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter some text';
-                      }
-                      return null;
-                    },
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      controller: _titlecontroller,
+                      inputFormatters: [LengthLimitingTextInputFormatter(50)],
+                      decoration: InputDecoration(
+                          label: const Text("Name"),
+                          labelStyle: const TextStyle(color: Color(0xFF69656F)),
+                          errorText: _validate ? "Please Fill the Name" : null),
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter some text';
+                        }
+                        return null;
+                      },
+                      
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
                   ),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,2}$')),
-                    ],
-                    decoration: InputDecoration(
-                        label: const Text("Amount"),
-                        errorText: _validate ? "Please Fill the Amount" : null),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,2}$')),
+                      ],
+                      decoration: InputDecoration(
+                          label: const Text("Amount"),
+                          labelStyle: const TextStyle(color: Color(0xFF69656F)),
+                          errorText:
+                              _validate ? "Please Fill the Amount" : null),
+                    ),
                   ),
                   Padding(
                     padding: EdgeInsets.only(
@@ -262,35 +325,70 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                           }
                         });
                       },
-                      child: Text((_selectedDate != null
-                          ? DateFormat.yMEd().format(_selectedDate!)
-                          : "Select Date"))),
+                      child: Text((DateFormat.yMEd().format(_selectedDate)))),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.only(right: 10.0),
-                          child: Text("Credit"),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Credit",
+                                style: TextStyle(
+                                    fontWeight: _isDebit
+                                        ? FontWeight.normal
+                                        : FontWeight.bold),
+                              ),
+                              AnimatedBuilder(
+                                  animation: _creditAnimation,
+                                  builder: (context, child) {
+                                    return Transform.translate(
+                                      offset:
+                                          Offset(0.0, _creditAnimation.value),
+                                      child: Text(
+                                        String.fromCharCode(Icons
+                                            .keyboard_arrow_up_rounded
+                                            .codePoint),
+                                        style: TextStyle(
+                                          inherit: false,
+                                          color: Colors.green,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          fontFamily: Icons
+                                              .keyboard_arrow_down.fontFamily,
+                                          package: Icons
+                                              .keyboard_arrow_down.fontPackage,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                            ],
+                          ),
                         ),
                         Switch(
                             thumbIcon: const MaterialStatePropertyAll(Icon(
                               Icons.attach_money,
-                              color: Colors.white,
+                              color: Color(0xff663399),
                             )),
                             activeTrackColor: Colors.red,
+                            inactiveTrackColor: Colors.green,
                             thumbColor:
                                 const MaterialStatePropertyAll(Colors.yellow),
                             overlayColor:
                                 const MaterialStatePropertyAll(Colors.green),
                             trackOutlineColor: MaterialStatePropertyAll(
-                                _isDebit ? Colors.amber : Colors.green),
+                                _isDebit ? Colors.red : Colors.green),
                             key: UniqueKey(),
                             value: _isDebit,
                             onChanged: (val) {
+                              val ? _animateMinusIcon() : _animatePlusIcon();
                               setState(() {
                                 _isDebit = val;
                               });
+                              debugPrint("$_isDebit");
                             }),
                         // Checkbox(
                         //     value: _isDebit,
@@ -299,14 +397,49 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet> {
                         //         _isDebit = newVal ?? false;
                         //       });
                         //     }),
-                        const Text("Debit"),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Debit",
+                                style: TextStyle(
+                                    fontWeight: _isDebit
+                                        ? FontWeight.bold
+                                        : FontWeight.normal),
+                              ),
+                              AnimatedBuilder(
+                                  animation: _debitAnimation,
+                                  builder: (context, child) =>
+                                      Transform.translate(
+                                        offset:
+                                            Offset(0.0, _debitAnimation.value),
+                                        child: Text(
+                                          String.fromCharCode(Icons
+                                              .keyboard_arrow_down_rounded
+                                              .codePoint),
+                                          style: TextStyle(
+                                            inherit: false,
+                                            color: Colors.red,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: Icons
+                                                .keyboard_arrow_down.fontFamily,
+                                            package: Icons.keyboard_arrow_down
+                                                .fontPackage,
+                                          ),
+                                        ),
+                                      ))
+                            ],
+                          ),
+                        ),
                         const Spacer(),
                         ElevatedButton(
                             onPressed: () {
                               setState(() {
                                 _validate = _amountController.text.isEmpty;
                               });
-                              _validate ? null : saveNewTask();
+                              _validate ? null : saveNewExpense();
                               debugPrint("$_foundExpense");
                             },
                             child: const Text("Add"))
