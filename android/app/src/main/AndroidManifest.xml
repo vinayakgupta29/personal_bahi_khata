@@ -1,8 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.vins.bahi_khata">
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
 
     <application
         android:label="Personal Bahi Khata"
@@ -47,13 +46,13 @@
             </intent-filter>
 
             <!-- Intent filter to handle .bkx files -->
-            <intent-filter>
+            <!-- <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="file" />
                 <data android:scheme="content" />
                 <data android:mimeType="text/*" />
-            </intent-filter>
+            </intent-filter> -->
 
         </activity>
         <!-- Don't delete the meta-data below.

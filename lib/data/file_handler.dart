@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/presentation/homepage.dart';
 import 'package:personal_finance_tracker/presentation/opened_file.dart';
 
@@ -57,7 +58,7 @@ class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
       try {
         var intent = url; //await IntentHandler.getIntent();
         debugPrint("intent data $intent");
-        if (intent != null && mounted) {
+        if (intent != null && mounted && DataBase.isPermitted) {
           String filePath = intent.toString();
           await Navigator.of(context).pushReplacement(
             MaterialPageRoute(

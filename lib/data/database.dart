@@ -70,6 +70,8 @@ class DataBase {
   static String key = 'viksviksviksviks';
 
   static List<Directory>? dirs;
+
+  static bool isPermitted = false;
   static void createInitialData() {
     expenses = [];
   }

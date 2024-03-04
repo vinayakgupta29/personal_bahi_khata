@@ -138,24 +138,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   requestStoragePermission() async {
-    bool isDenied = await Permission.storage.isDenied;
+    bool isDenied = await Permission.accessMediaLocation.isDenied;
     if (isDenied) {
-      await Permission.storage.request();
+      await Permission.accessMediaLocation.request();
     }
-    var status = await Permission.storage.status;
+    var status = await Permission.accessMediaLocation.status;
+
     if (status != PermissionStatus.granted && mounted) {
-      showDialog(
-          context: context,
-          builder: (_) => const AlertDialog(
-                title: Text(
-                    "Please grant Storage permission it is necessary"),
-              ));
+      setState(() {
+        DataBase.isPermitted = true;
+      });
+      openAppSettings();
+    } else {
+      setState(() {
+        DataBase.isPermitted = false;
+      });
     }
   }
 
   @override
   void initState() {
-    requestStoragePermission();
+   // requestStoragePermission();
     DataBase.loadExpenses().then((value) {
       setState(() {
         json = value;

@@ -2,7 +2,6 @@
 package com.vins.bahi_khata
 
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.annotation.NonNull
@@ -26,7 +25,7 @@ class MainActivity : FlutterActivity() {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "handleOpenFileUrl" -> {
-                    println("openPath "+openPath)
+                    println("openPath $openPath")
                     result.success(openPath)
                 }
                 else -> result.notImplemented()
@@ -56,25 +55,19 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleOpenFileUrl(intent,this)
+        handleOpenFileUrl(intent)
     }
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleOpenFileUrl(intent, this)
+        handleOpenFileUrl(intent)
     }
     
-    private fun handleOpenFileUrl(intent: Intent?, context: Context) {
+    private fun handleOpenFileUrl(intent: Intent?) {
         val path = intent?.data?.path
-        println(intent)
-        val contentResolver = context.contentResolver
-
-        
-
         if (path != null) {
-            openPath = path.substring(5)
-            println("path : $path")
-
+            openPath = path.substring(5) // Adjust the substring index based on your file URI format
+            println("path: $path")
         }
     }
 
