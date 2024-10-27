@@ -54,7 +54,7 @@ class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
         openFileUrl = url;
       });
     }
-    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         var intent = url; //await IntentHandler.getIntent();
         debugPrint("intent data $intent");

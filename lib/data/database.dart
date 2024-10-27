@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:personal_finance_tracker/data/sms_api.dart';
 
 // writeFile(Map<String, dynamic> data) async {
 //   var dir = await getExternalStorageDirectory();
@@ -16,7 +17,7 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 //   File('/storage/emulated/0/Files/fin.bkx').writeAsStringSync(jsonEncode(data));
 // }
 
-Map<String, dynamic> compressAndEncryptJson(String jsonData, String key) {
+String compressAndEncryptJson(String jsonData, String key) {
   // Compress JSON data
   List<int> compressedData = GZipCodec().encode(utf8.encode(jsonData));
 
@@ -27,16 +28,19 @@ Map<String, dynamic> compressAndEncryptJson(String jsonData, String key) {
   final encryptedData = encrypter.encryptBytes(compressedData, iv: iv);
 
   // Return base64 encoded encrypted data and IV
-  return {"data": base64.encode(encryptedData.bytes), "iv": iv.base64};
+  return "${base64.encode(encryptedData.bytes)}|${iv.base64}"
+      .replaceAll('"', "");
 }
 
 // Function to decompress and decrypt JSON data
 Map<String, dynamic> decryptAndDecompressJson(
-    Map<String, dynamic> encryptedCompressedData, String key) {
+    String encryptedCompressedData, String key) {
   // Extract IV and encrypted data
   debugPrint("key $key");
-  String ivString = encryptedCompressedData['iv'];
-  List<int> encryptedData = base64.decode(encryptedCompressedData['data']);
+  List<String> data = encryptedCompressedData.split("|");
+  String ivString = data[1];
+  SmsApi.lastDate = DateTime.parse(data[2]);
+  List<int> encryptedData = base64.decode(data[0]);
 
   // Decrypt data
   final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
@@ -50,7 +54,7 @@ Map<String, dynamic> decryptAndDecompressJson(
 
   // Convert decompressed data to string and parse as JSON
   String jsonString = utf8.decode(decompressedData);
-  var jsonData = jsonDecode(jsonString);
+  Map<String, dynamic> jsonData = jsonDecode(jsonString);
   debugPrint("json decry $jsonData");
   // Return JSON data
   return jsonData;
@@ -61,7 +65,7 @@ class DataBase {
   static Set<String> uniqueTags = {};
   static List<String> selectedTags = [];
   static DateTime? selectedDate;
-  static List<int> uniqueyears = [];
+  static Set<int> uniqueyears = {};
   static String filepath = '';
 
   static String libDir = '';
@@ -86,10 +90,10 @@ class DataBase {
 
   //FileHandlerWR.writeToFile('fis', jsonEncode(encryptedCompressedJson));
 
-  void updateDatabase() {
+  void updateDatabase(DateTime? lastDate) {
     //_myBox.put("expenses", Expense.listToJson(expenses));
     Map<String, dynamic> newJson = {"expenses": DataBase.expenses};
-    saveExpenses(jsonEncode(newJson));
+    saveExpenses(jsonEncode(newJson), lastDate);
   }
 
   static String json = """{"expenses":[]}""";
@@ -99,7 +103,7 @@ class DataBase {
     try {
       Directory? path = await getApplicationDocumentsDirectory();
 
-      final file = await File('${path.path}/fins.bkx')
+      final file = await File('${path.path}/fins.ebv')
           .create(recursive: true); // Create if not found
       expFile = file;
       final contents = await file.readAsString();
@@ -121,16 +125,17 @@ class DataBase {
     return json;
   }
 
-  static Future<void> saveExpenses(String newJson) async {
+  static Future<void> saveExpenses(String newJson, DateTime? date) async {
     try {
-      Directory path = await getApplicationDocumentsDirectory();
-      debugPrint(path.path);
+      Directory? path = await getExternalStorageDirectory();
+      debugPrint(path?.path);
       // Encrypt and compress JSON
-      var encryptedCompressedJson = compressAndEncryptJson(newJson, key);
-      debugPrint("enc $encryptedCompressedJson");
-      await File('${path.path}/fins.bkx')
-          .writeAsString(jsonEncode(encryptedCompressedJson));
-      expFile = File('${path.path}/fins.bkx');
+      String encryptedCompressedString = compressAndEncryptJson(newJson, key);
+      String fileContent =
+          "${encryptedCompressedString.replaceAll('"', "")}|${date?.toIso8601String() ?? ""}";
+      debugPrint("enc $encryptedCompressedString");
+      await File('${path?.path}/fins.ebv').writeAsString(fileContent);
+      expFile = File('${path?.path}/fins.vkx');
       debugPrint("write file \n\n\n\n");
     } catch (e) {
       debugPrint("Error saving expenses: $e");

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/presentation/searchpage.dart';
@@ -38,8 +37,8 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> jsondata = jsonDecode(readFile(widget.filePath));
-    debugPrint(" open ${jsondata.keys}");
+    String jsondata = (readFile(widget.filePath));
+
     Map<String, dynamic> data =
         decryptAndDecompressJson(jsondata, "viksviksviksviks");
     debugPrint("data key ${data.keys}");

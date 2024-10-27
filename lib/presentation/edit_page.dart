@@ -6,15 +6,15 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/main.dart';
 
-class PaymntBottomSheet extends StatefulWidget {
-  const PaymntBottomSheet({super.key});
+class EditPage extends StatefulWidget {
+  final Expense expense;
+  const EditPage({super.key, required this.expense});
 
   @override
-  State<PaymntBottomSheet> createState() => _PaymntBottomSheetState();
+  State<EditPage> createState() => _EditPageState();
 }
 
-class _PaymntBottomSheetState extends State<PaymntBottomSheet>
-    with TickerProviderStateMixin {
+class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
   var tags = ["Food", "Fast Food", "Donation", "Travel", "Other"];
   List<String> selectedTags = [];
   final List<Expense> _foundExpense = [];
@@ -45,15 +45,17 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
   // save new task
   void saveNewExpense() {
     setState(() {
-      DataBase.expenses.add(Expense(
-          name: _titlecontroller.text,
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          date: _selectedDate.toIso8601String(),
-          amount: double.parse(_amountController.text).toString(),
-          label: selectedTags,
-          isDebit: _isDebit));
-      _titlecontroller.clear();
-      _amountController.clear();
+      int index =
+          DataBase.expenses.indexWhere((e) => e.id == widget.expense.id);
+      if (index != -1) {
+        DataBase.expenses[index] = Expense(
+            name: _titlecontroller.text,
+            date: widget.expense.date,
+            id: widget.expense.id,
+            amount: double.parse(_amountController.text).toString(),
+            label: selectedTags,
+            isDebit: _isDebit);
+      }
       // db.updateDatabase();
 
       expenseNotifier.update(DataBase.expenses);
@@ -87,6 +89,14 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
     _debitAnimation =
         Tween(begin: 0.0, end: 10.0).animate(_debitAnimationController);
     _creditAnimationController.reset();
+
+    _titlecontroller.text = widget.expense.name ?? "";
+    _amountController.text = widget.expense.amount ?? "";
+    _isDebit = widget.expense.isDebit ?? false;
+    _selectedDate = DateTime.parse(
+      widget.expense.date ?? DateTime.now().toIso8601String(),
+    );
+    selectedTags = widget.expense.label ?? [];
   }
 
   void _animatePlusIcon() {
@@ -441,7 +451,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                               _validate ? null : saveNewExpense();
                               debugPrint("$_foundExpense");
                             },
-                            child: const Text("Add"))
+                            child: const Text("Save"))
                       ],
                     ),
                   ),

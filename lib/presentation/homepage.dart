@@ -1,12 +1,15 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_finance_tracker/data/database.dart';
+import 'package:personal_finance_tracker/data/sms_api.dart';
 import 'package:personal_finance_tracker/main.dart';
 import 'package:personal_finance_tracker/presentation/bottomsheet.dart';
+import 'package:personal_finance_tracker/presentation/edit_page.dart';
 import 'package:personal_finance_tracker/presentation/searchpage.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 
@@ -130,7 +133,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       DataBase.expenses.removeWhere((item) => item.id == id);
     });
-    db.updateDatabase();
+    db.updateDatabase(null);
     debugPrint(DataBase.expenses.toString());
     setState(() {
       expenseNotifier.update(DataBase.expenses);
@@ -138,9 +141,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   requestStoragePermission() async {
-    bool isDenied = await Permission.accessMediaLocation.isDenied;
-    if (isDenied) {
-      await Permission.accessMediaLocation.request();
+    bool isGranted = await Permission.storage.isGranted;
+    if (!isGranted && mounted) {
+      await Permission.storage.request();
     }
     var status = await Permission.accessMediaLocation.status;
 
@@ -158,7 +161,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-   // requestStoragePermission();
+    //  requestStoragePermission();
     DataBase.loadExpenses().then((value) {
       setState(() {
         json = value;
@@ -181,6 +184,9 @@ class _HomePageState extends State<HomePage> {
         DataBase.uniqueTags = Set<String>.from(allTags);
         expenseNotifier.update(Expense.listFromRawJson(json));
       });
+    });
+    setState(() {
+      SmsApi.getSms();
     });
     super.initState();
   }
@@ -377,7 +383,7 @@ class _HomePageState extends State<HomePage> {
                                 height: 50,
                                 width: MediaQuery.of(context).size.width,
                                 child: Card(
-                                  color: bgcolor,
+                                  color: headerColor,
                                   elevation: 10,
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
@@ -425,7 +431,19 @@ class _HomePageState extends State<HomePage> {
                                                   deleteExpense(obj.id ?? ""),
                                               label: "DELETE",
                                               backgroundColor: Colors.red,
-                                            )
+                                            ),
+                                          ]),
+                                      startActionPane: ActionPane(
+                                          motion: const StretchMotion(),
+                                          children: [
+                                            SlidableAction(
+                                              onPressed: (context) =>
+                                                  Navigator.of(context).push(
+                                                _createEditRoute(obj),
+                                              ),
+                                              label: "EDIT",
+                                              backgroundColor: Colors.blue,
+                                            ),
                                           ]),
                                       child: ListTile(
                                         key: Key(obj.id ?? ""),
@@ -550,5 +568,29 @@ class _HomePageState extends State<HomePage> {
     } else {
       return true;
     }
+  }
+
+  Route _createEditRoute(Expense expense) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => EditPage(
+        expense: expense,
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0); // Start from the right
+        const end = Offset.zero; // End at the center
+        const curve = Curves.easeInOut;
+
+        // Create a tween animation
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        // Use SlideTransition to animate the transition
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
+    );
   }
 }

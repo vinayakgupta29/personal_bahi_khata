@@ -4,6 +4,7 @@ package com.vins.bahi_khata
 
 import android.content.Intent
 import android.os.Bundle
+import android.net.Uri
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -64,6 +65,7 @@ class MainActivity : FlutterActivity() {
     }
     
     private fun handleOpenFileUrl(intent: Intent?) {
+
         val path = intent?.data?.path
         if (path != null) {
             openPath = path.substring(5) // Adjust the substring index based on your file URI format
