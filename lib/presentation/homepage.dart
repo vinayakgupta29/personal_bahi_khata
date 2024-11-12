@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -7,10 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_finance_tracker/data/database.dart';
 import 'package:personal_finance_tracker/data/sms_api.dart';
+import 'package:personal_finance_tracker/data/telephony_service.dart';
 import 'package:personal_finance_tracker/main.dart';
 import 'package:personal_finance_tracker/presentation/bottomsheet.dart';
 import 'package:personal_finance_tracker/presentation/edit_page.dart';
 import 'package:personal_finance_tracker/presentation/searchpage.dart';
+import 'package:personal_finance_tracker/presentation/splash_screen.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 
 class HomePage extends StatefulWidget {
@@ -167,7 +168,7 @@ class _HomePageState extends State<HomePage> {
         json = value;
         debugPrint(json);
         DataBase.expenses = Expense.listFromRawJson(json);
-        var allTags = [];
+        List<String> allTags = [];
         for (Expense obj in DataBase.expenses) {
           if (obj.date != null) {
             var year = DateTime.parse(obj.date!).year;
@@ -185,9 +186,12 @@ class _HomePageState extends State<HomePage> {
         expenseNotifier.update(Expense.listFromRawJson(json));
       });
     });
-    setState(() {
-      SmsApi.getSms();
+    TelephonyService().isTelephonyAvailable().then((val) {
+      setState(() {
+        SmsApi.filterSms();
+      });
     });
+
     super.initState();
   }
 
@@ -203,10 +207,7 @@ class _HomePageState extends State<HomePage> {
         stream: expenseNotifier.stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxHeight: 100, maxWidth: 100),
-                child: const CircularProgressIndicator());
+            return const SplashScreen();
           }
           _foundExpense = snapshot.data ?? [];
           debugPrint("found length ${DataBase.expenses.length}");
@@ -227,7 +228,6 @@ class _HomePageState extends State<HomePage> {
           debugPrint("selected ${DataBase.selectedTags} filter $filterObjects");
           // // Group objects by month and year
           Map<String, List<Expense>> groupedObjects = {};
-          var allTags = [];
           for (Expense obj in filterObjects) {
             String monthYear = obj.getMonthYear();
             if (!groupedObjects.containsKey(monthYear)) {

@@ -39,7 +39,9 @@ Map<String, dynamic> decryptAndDecompressJson(
   debugPrint("key $key");
   List<String> data = encryptedCompressedData.split("|");
   String ivString = data[1];
-  SmsApi.lastDate = DateTime.parse(data[2]);
+  SmsApi.lastDate =
+      data[2] == "null" || data[2].isEmpty ? null : DateTime.parse(data[2]);
+  debugPrint("lastdate decompress ${data[2]}");
   List<int> encryptedData = base64.decode(data[0]);
 
   // Decrypt data
@@ -101,17 +103,17 @@ class DataBase {
 
   static Future<String> loadExpenses() async {
     try {
-      Directory? path = await getApplicationDocumentsDirectory();
+      Directory? path = await getExternalStorageDirectory();
 
-      final file = await File('${path.path}/fins.ebv')
+      final file = await File('${path?.path}/fins.ebv')
           .create(recursive: true); // Create if not found
       expFile = file;
-      final contents = await file.readAsString();
+      final contents = file.readAsBytesSync();
       debugPrint("contents $contents");
       // Decrypt and decompress JSON
       if (contents.isNotEmpty) {
         var decryptedDecompressedJson =
-            decryptAndDecompressJson(jsonDecode(contents), key);
+            decryptAndDecompressJson(String.fromCharCodes(contents), key);
         debugPrint("decrypted $decryptedDecompressedJson");
         json = jsonEncode(decryptedDecompressedJson);
       }
@@ -134,7 +136,7 @@ class DataBase {
       String fileContent =
           "${encryptedCompressedString.replaceAll('"', "")}|${date?.toIso8601String() ?? ""}";
       debugPrint("enc $encryptedCompressedString");
-      await File('${path?.path}/fins.ebv').writeAsString(fileContent);
+      await File('${path?.path}/fins.ebv').writeAsBytes(fileContent.codeUnits);
       expFile = File('${path?.path}/fins.vkx');
       debugPrint("write file \n\n\n\n");
     } catch (e) {

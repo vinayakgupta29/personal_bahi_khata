@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +17,7 @@ class OpenedFilePage extends StatefulWidget {
 }
 
 class _OpenedFilePageState extends State<OpenedFilePage> {
-  var file;
+  late Uint8List file;
 
   @override
   void initState() {
@@ -37,7 +38,7 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
 
   @override
   Widget build(BuildContext context) {
-    String jsondata = (readFile(widget.filePath));
+    String jsondata = String.fromCharCodes(readFile(widget.filePath));
 
     Map<String, dynamic> data =
         decryptAndDecompressJson(jsondata, "viksviksviksviks");
@@ -59,7 +60,7 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
     debugPrint("selected ${DataBase.selectedTags} filter $filterObjects");
     // // Group objects by month and year
     Map<String, List<Expense>> groupedObjects = {};
-    var allTags = [];
+
     for (Expense obj in filterObjects) {
       String monthYear = obj.getMonthYear();
       if (!groupedObjects.containsKey(monthYear)) {
@@ -236,7 +237,7 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
     );
   }
 
-  String readFile(String filepath) {
-    return File(filepath).readAsStringSync();
+  Uint8List readFile(String filepath) {
+    return File(filepath).readAsBytesSync();
   }
 }

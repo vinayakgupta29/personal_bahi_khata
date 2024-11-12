@@ -10,7 +10,7 @@ class FileHandler extends StatefulWidget {
   const FileHandler({Key? key}) : super(key: key);
 
   @override
-  _FileHandlerState createState() => _FileHandlerState();
+  State<FileHandler> createState() => _FileHandlerState();
 }
 
 class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {

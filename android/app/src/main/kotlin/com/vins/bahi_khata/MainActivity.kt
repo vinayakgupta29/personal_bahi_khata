@@ -10,6 +10,12 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
+import android.Manifest
+import android.content.pm.PackageManager
+import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
+
+
 
 
 class MainActivity : FlutterActivity() {
@@ -29,10 +35,16 @@ class MainActivity : FlutterActivity() {
                     println("openPath $openPath")
                     result.success(openPath)
                 }
+                "isTelephonyAvailable" -> {
+                    val isAvailable = isTelephonyAvailable()
+                    result.success(isAvailable)
+                }
                 else -> result.notImplemented()
             }
         }
 
+
+    
 //      val channel2 =  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.vins.bahi_khata/write_file")
 //      channel2.setMethodCallHandler { call, result ->
 //            when (call.method) {
@@ -71,6 +83,11 @@ class MainActivity : FlutterActivity() {
             openPath = path.substring(5) // Adjust the substring index based on your file URI format
             println("path: $path")
         }
+    }
+
+    private fun isTelephonyAvailable(): Boolean {
+        val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+        return telephonyManager.phoneType != TelephonyManager.PHONE_TYPE_NONE
     }
 
     

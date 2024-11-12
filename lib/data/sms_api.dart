@@ -40,17 +40,8 @@ class SmsApi {
       }
 
       // db.updateDatabase();
-      DataBase.uniqueTags.add("SMS");
-      expenseNotifier.update(DataBase.expenses);
     }
-    var newList = Expense.listToJson(DataBase.expenses);
-    var newJson = jsonEncode({
-      "expenses": newList,
-      "lastDate": lastDate?.toIso8601String(),
-    });
-
-    DataBase.saveExpenses(newJson, lastDate);
-    print("messgers${messagees.length}");
+    debugPrint("messgers${DataBase.expenses.length}");
     return messagees;
   }
 
@@ -69,7 +60,19 @@ class SmsApi {
           }
         });
 
+      DataBase.uniqueTags.add("SMS");
+      expenseNotifier.update(DataBase.expenses);
+
+      var newList = Expense.listToJson(DataBase.expenses);
+      var newJson = jsonEncode({
+        "expenses": newList,
+        "lastDate": lastDate?.toIso8601String(),
+      });
+
       lastDate = messages0.first.date;
+      debugPrint("date ${lastDate?.toIso8601String()}");
+      DataBase.saveExpenses(newJson, lastDate);
+
       debugPrint("messages ${messages0.length}");
     });
   }
