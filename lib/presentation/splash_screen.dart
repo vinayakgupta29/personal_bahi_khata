@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Start the timer to toggle the fade every 2 seconds
-    _timer = Timer.periodic(Duration(milliseconds: 1800), (_) {
+    _timer = Timer.periodic(const Duration(milliseconds: 1800), (_) {
       _toggleFade();
     });
   }

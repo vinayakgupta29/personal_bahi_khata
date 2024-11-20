@@ -105,7 +105,7 @@ class DataBase {
     try {
       Directory? path = await getExternalStorageDirectory();
 
-      final file = await File('${path?.path}/fins.ebv')
+      final file = await File('${path?.path}/fins.pbke')
           .create(recursive: true); // Create if not found
       expFile = file;
       final contents = file.readAsBytesSync();
@@ -136,8 +136,8 @@ class DataBase {
       String fileContent =
           "${encryptedCompressedString.replaceAll('"', "")}|${date?.toIso8601String() ?? ""}";
       debugPrint("enc $encryptedCompressedString");
-      await File('${path?.path}/fins.ebv').writeAsBytes(fileContent.codeUnits);
-      expFile = File('${path?.path}/fins.vkx');
+      await File('${path?.path}/fins.pbke').writeAsBytes(fileContent.codeUnits);
+      expFile = File('${path?.path}/fins.pbke');
       debugPrint("write file \n\n\n\n");
     } catch (e) {
       debugPrint("Error saving expenses: $e");
