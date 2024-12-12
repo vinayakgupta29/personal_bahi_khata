@@ -1,3 +1,3 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="external_files" path="." mimeType="application/octet-stream"/>
+    <external-path name="external_files" path="." mimeType="application/pdf"/>
 </paths>

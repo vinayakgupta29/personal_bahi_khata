@@ -104,9 +104,9 @@ class DataBase {
   static Future<String> loadExpenses() async {
     try {
       Directory? path = await getExternalStorageDirectory();
-
       final file = await File('${path?.path}/fins.pbke')
           .create(recursive: true); // Create if not found
+      filepath = file.path;
       expFile = file;
       final contents = file.readAsBytesSync();
       debugPrint("contents $contents");
@@ -136,7 +136,9 @@ class DataBase {
       String fileContent =
           "${encryptedCompressedString.replaceAll('"', "")}|${date?.toIso8601String() ?? ""}";
       debugPrint("enc $encryptedCompressedString");
-      await File('${path?.path}/fins.pbke').writeAsBytes(fileContent.codeUnits);
+      var file = await File('${path?.path}/fins.pbke')
+          .writeAsBytes(fileContent.codeUnits);
+      filepath = file.path;
       expFile = File('${path?.path}/fins.pbke');
       debugPrint("write file \n\n\n\n");
     } catch (e) {
