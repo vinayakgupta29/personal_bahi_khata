@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:personal_finance_tracker/data/encryption.dart';
 import 'package:personal_finance_tracker/data/sms_api.dart';
 
 // writeFile(Map<String, dynamic> data) async {
@@ -17,39 +16,49 @@ import 'package:personal_finance_tracker/data/sms_api.dart';
 //   File('/storage/emulated/0/Files/fin.bkx').writeAsStringSync(jsonEncode(data));
 // }
 
-String compressAndEncryptJson(String jsonData, String key) {
+Future<List<int>> compressAndEncryptJson(String jsonData, List<int> key) async {
   // Compress JSON data
   List<int> compressedData = GZipCodec().encode(utf8.encode(jsonData));
 
   debugPrint("key $key");
-  // Encrypt compressed data
-  final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
-  final iv = encrypt.IV.fromLength(16);
-  final encryptedData = encrypter.encryptBytes(compressedData, iv: iv);
+  // // Encrypt compressed data
+  // final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
+  // final iv = encrypt.IV.fromLength(16);
+  // final encryptedData = encrypter.encryptBytes(compressedData, iv: iv);
 
-  // Return base64 encoded encrypted data and IV
-  return "${base64.encode(encryptedData.bytes)}|${iv.base64}"
-      .replaceAll('"', "");
+  // // Return base64 encoded encrypted data and IV
+  // return "${base64.encode(encryptedData.bytes)}|${iv.base64}"
+  //     .replaceAll('"', "");
+  var encryptedData =
+      await EncryptionAES.encryptAESGCM(compressedData, base64Encode(key));
+  return encryptedData;
 }
 
 // Function to decompress and decrypt JSON data
-Map<String, dynamic> decryptAndDecompressJson(
-    String encryptedCompressedData, String key) {
+Future<Map<String, dynamic>> decryptAndDecompressJson(
+    List<int> encryptedCompressedData, String key) async {
   // Extract IV and encrypted data
   debugPrint("key $key");
-  List<String> data = encryptedCompressedData.split("|");
-  String ivString = data[1];
-  SmsApi.lastDate =
-      data[2] == "null" || data[2].isEmpty ? null : DateTime.parse(data[2]);
-  debugPrint("lastdate decompress ${data[2]}");
-  List<int> encryptedData = base64.decode(data[0]);
+  // List<String> data = encryptedCompressedData.split("|");
+  // String ivString = data[1];
+  // SmsApi.lastDate =
+  //     data[2] == "null" || data[2].isEmpty ? null : DateTime.parse(data[2]);
+  // debugPrint("lastdate decompress ${data[2]}");
+  // List<int> encryptedData = base64.decode(data[0]);
 
-  // Decrypt data
-  final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
-  final iv = encrypt.IV.fromBase64(ivString);
-  final decryptedData = encrypter.decryptBytes(
-      encrypt.Encrypted(Uint8List.fromList(encryptedData)),
-      iv: iv);
+  // // Decrypt data
+  // final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
+  // final iv = encrypt.IV.fromBase64(ivString);
+  // final decryptedData = encrypter.decryptBytes(
+  //     encrypt.Encrypted(Uint8List.fromList(encryptedData)),
+  //     iv: iv);
+
+  var decryptedData = await EncryptionAES.decryptAESGCM(
+    encryptedCompressedData,
+    base64Encode(
+      utf8.encode(key),
+    ),
+  );
 
   // Decompress decrypted data
   List<int> decompressedData = GZipCodec().decode(decryptedData);
@@ -60,6 +69,34 @@ Map<String, dynamic> decryptAndDecompressJson(
   debugPrint("json decry $jsonData");
   // Return JSON data
   return jsonData;
+}
+
+List<int> getUnixTime(DateTime? date) {
+  // Get the current date as Unix time (seconds since epoch)
+  if (date != null) {
+    var unixTime =
+        DateTime.parse(date.toIso8601String()).millisecondsSinceEpoch ~/ 1000;
+    return [
+      (unixTime >> 24) & 0xFF,
+      (unixTime >> 16) & 0xFF,
+      (unixTime >> 8) & 0xFF,
+      unixTime & 0xFF
+    ];
+  } else {
+    return [0, 0, 0, 0];
+  }
+}
+
+DateTime getDateTimeFromUnixTime(List<int> dateAsBytes) {
+  int unixTimeStartIndex = 7; // String length (7 bytes)
+  List<int> unixTimeBytes =
+      dateAsBytes.sublist(unixTimeStartIndex, unixTimeStartIndex + 4);
+
+  int unixTime = unixTimeBytes[0] << 24 |
+      unixTimeBytes[1] << 16 |
+      unixTimeBytes[2] << 8 |
+      unixTimeBytes[3];
+  return DateTime.fromMillisecondsSinceEpoch(unixTime * 1000);
 }
 
 class DataBase {
@@ -73,7 +110,7 @@ class DataBase {
   static String libDir = '';
 
   static String? downDir;
-  static String key = 'viksviksviksviks';
+  static String SIGNATURE = "%PBKE%";
 
   static List<Directory>? dirs;
 
@@ -112,8 +149,12 @@ class DataBase {
       debugPrint("contents $contents");
       // Decrypt and decompress JSON
       if (contents.isNotEmpty) {
+        int headerSize = utf8.encode(SIGNATURE).length + 4 + 19;
+        List<int> metadata = contents.sublist(0, headerSize - 1);
+        SmsApi.lastDate = getDateTimeFromUnixTime(metadata);
+        List<int> data = contents.sublist(headerSize);
         var decryptedDecompressedJson =
-            decryptAndDecompressJson(String.fromCharCodes(contents), key);
+            await decryptAndDecompressJson(data, EncryptionAES.KEY);
         debugPrint("decrypted $decryptedDecompressedJson");
         json = jsonEncode(decryptedDecompressedJson);
       }
@@ -132,14 +173,20 @@ class DataBase {
       Directory? path = await getExternalStorageDirectory();
       debugPrint(path?.path);
       // Encrypt and compress JSON
-      String encryptedCompressedString = compressAndEncryptJson(newJson, key);
-      String fileContent =
-          "${encryptedCompressedString.replaceAll('"', "")}|${date?.toIso8601String() ?? ""}";
+      List<int> encryptedCompressedString =
+          await compressAndEncryptJson(newJson, utf8.encode(EncryptionAES.KEY));
+      List<int> fileContent = [
+        ...utf8.encode(SIGNATURE),
+        ...getUnixTime(date),
+        ...List.generate(19, (e) => 0),
+        ...encryptedCompressedString
+      ];
       debugPrint("enc $encryptedCompressedString");
-      var file = await File('${path?.path}/fins.pbke')
-          .writeAsBytes(fileContent.codeUnits);
+      var file =
+          await File('${path?.path}/fins.pbke').writeAsBytes(fileContent);
       filepath = file.path;
       expFile = File('${path?.path}/fins.pbke');
+
       debugPrint("write file \n\n\n\n");
     } catch (e) {
       debugPrint("Error saving expenses: $e");

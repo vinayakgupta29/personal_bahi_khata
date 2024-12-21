@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance_tracker/data/database.dart';
+import 'package:personal_finance_tracker/data/encryption.dart';
 import 'package:personal_finance_tracker/presentation/searchpage.dart';
 import 'package:personal_finance_tracker/util/constants.dart';
 
@@ -38,10 +39,14 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
 
   @override
   Widget build(BuildContext context) {
-    String jsondata = String.fromCharCodes(readFile(widget.filePath));
+    List<int> jsondata = (readFile(widget.filePath));
+    Map<String, dynamic> data = {};
 
-    Map<String, dynamic> data =
-        decryptAndDecompressJson(jsondata, "viksviksviksviks");
+    decryptAndDecompressJson(jsondata, EncryptionAES.KEY).then((val) => {
+          setState(() {
+            data = val;
+          }),
+        });
     debugPrint("data key ${data.keys}");
     var foundExpense = Expense.listFromRawJson(jsonEncode(data));
     foundExpense.sort((a, b) {
