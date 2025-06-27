@@ -4,10 +4,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:personal_finance_tracker/data/database.dart';
-import 'package:personal_finance_tracker/data/encryption.dart';
-import 'package:personal_finance_tracker/presentation/searchpage.dart';
-import 'package:personal_finance_tracker/util/constants.dart';
+import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/data/encryption.dart';
+import 'package:personal_bahi_khata/presentation/searchpage.dart';
+import 'package:personal_bahi_khata/util/constants.dart';
 
 class OpenedFilePage extends StatefulWidget {
   final String filePath;
@@ -42,11 +42,13 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
     List<int> jsondata = (readFile(widget.filePath));
     Map<String, dynamic> data = {};
 
-    decryptAndDecompressJson(jsondata, EncryptionAES.KEY).then((val) => {
-          setState(() {
-            data = val;
-          }),
-        });
+    decryptAndDecompressJson(jsondata, EncryptionAES.KEY).then(
+      (val) => {
+        setState(() {
+          data = val;
+        }),
+      },
+    );
     debugPrint("data key ${data.keys}");
     var foundExpense = Expense.listFromRawJson(jsonEncode(data));
     foundExpense.sort((a, b) {
@@ -54,14 +56,17 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
       DateTime dateB = DateTime.parse(b.date!);
       return dateB.compareTo(dateA);
     });
-    var filterObjects = foundExpense.where((obj) {
-      // Return true if all tags in the object's list are contained within DB.selectedTags
-      return ((DataBase.selectedTags.isNotEmpty
-              ? obj.label?.any((tag) => DataBase.selectedTags.contains(tag)) ??
-                  true
-              : true) &&
-          (dateFilter(obj)));
-    }).toList();
+    var filterObjects =
+        foundExpense.where((obj) {
+          // Return true if all tags in the object's list are contained within DB.selectedTags
+          return ((DataBase.selectedTags.isNotEmpty
+                  ? obj.label?.any(
+                        (tag) => DataBase.selectedTags.contains(tag),
+                      ) ??
+                      true
+                  : true) &&
+              (dateFilter(obj)));
+        }).toList();
     debugPrint("selected ${DataBase.selectedTags} filter $filterObjects");
     // // Group objects by month and year
     Map<String, List<Expense>> groupedObjects = {};
@@ -80,28 +85,35 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
         title: const Text(
           "Expenses",
           style: TextStyle(
-              color: textcolor, fontSize: 24, fontWeight: FontWeight.w700),
+            color: textcolor,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         backgroundColor: Colors.black,
         elevation: 10,
         actions: [
           IconButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => SearchPage(
-                              onPopCallback: () {
-                                setState(() {});
-                              },
-                              filePath: widget.filePath,
-                            )));
-              },
-              icon: const Icon(
-                Icons.search_outlined,
-                color: Colors.white,
-                size: 30,
-              ))
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => SearchPage(
+                        onPopCallback: () {
+                          setState(() {});
+                        },
+                        filePath: widget.filePath,
+                      ),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.search_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
         ],
       ),
       body: SafeArea(
@@ -113,9 +125,7 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
                 itemBuilder: (context, index) {
                   if (index.isOdd) {
                     // Divider
-                    return Container(
-                      height: 0.000005,
-                    );
+                    return Container(height: 0.000005);
                   }
 
                   // Header or List Item
@@ -149,9 +159,10 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
                                   Text(
                                     monthYear,
                                     style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: textcolor),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: textcolor,
+                                    ),
                                   ),
                                   const Spacer(),
                                   Padding(
@@ -159,13 +170,15 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
                                     child: Text(
                                       sum.toString(),
                                       style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: sum >= 0
-                                              ? Colors.green
-                                              : Colors.red),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            sum >= 0
+                                                ? Colors.green
+                                                : Colors.red,
+                                      ),
                                     ),
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -186,48 +199,53 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      DateFormat('E dd/MM/yyyy').format(
-                                        DateTime.parse(obj.date!),
-                                      ),
+                                      DateFormat(
+                                        'E dd/MM/yyyy',
+                                      ).format(DateTime.parse(obj.date!)),
                                       style: const TextStyle(color: textcolor),
                                     ),
                                     SizedBox(
                                       height: 50,
-                                      width: MediaQuery.of(context).size.width -
+                                      width:
+                                          MediaQuery.of(context).size.width -
                                           100,
                                       child: ListView.builder(
-                                          shrinkWrap: true,
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: obj.label?.length ?? 0,
-                                          itemBuilder: (context, ind) =>
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8.0),
-                                                child: Chip(
-                                                    labelStyle: const TextStyle(
-                                                        fontSize: 12),
-                                                    label: Text(
-                                                        obj.label?[ind] ??
-                                                            "hi")),
-                                              )),
-                                    )
+                                        shrinkWrap: true,
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: obj.label?.length ?? 0,
+                                        itemBuilder:
+                                            (context, ind) => Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8.0,
+                                                  ),
+                                              child: Chip(
+                                                labelStyle: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                                label: Text(
+                                                  obj.label?[ind] ?? "hi",
+                                                ),
+                                              ),
+                                            ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 trailing: Text(
                                   (obj.isDebit ?? false ? "- " : "+ ") +
                                       (obj.amount ?? "N/A"),
                                   style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      color: (obj.isDebit ?? false)
-                                          ? Colors.red
-                                          : Colors.green),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    color:
+                                        (obj.isDebit ?? false)
+                                            ? Colors.red
+                                            : Colors.green,
+                                  ),
                                 ),
                               ),
-                              const Divider(
-                                color: hintcol,
-                              )
+                              const Divider(color: hintcol),
                             ],
                           ),
                       ],

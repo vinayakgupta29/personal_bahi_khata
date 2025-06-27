@@ -1,5 +1,5 @@
 
-package com.vins.bahi_khata
+package com.vins.personal_bahi_khata
 
 
 import android.content.Intent
@@ -20,10 +20,10 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "com.vins.bahi_khata/open_file"
+    private val CHANNEL = "com.vins.personal_bahi_khata/open_file"
 
     var openPath: String? = null
-    private val fileProvider = "com.vins.bahi_khata.fileprovider"
+    private val fileProvider = "com.vins.personal_bahi_khata.fileprovider"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         GeneratedPluginRegistrant.registerWith(flutterEngine)
@@ -45,7 +45,7 @@ class MainActivity : FlutterActivity() {
 
 
     
-//      val channel2 =  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.vins.bahi_khata/write_file")
+//      val channel2 =  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.vins.personal_bahi_khata/write_file")
 //      channel2.setMethodCallHandler { call, result ->
 //            when (call.method) {
 //                "writeToFile" -> {

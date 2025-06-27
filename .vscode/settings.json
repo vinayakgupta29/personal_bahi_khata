@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/GitHub/personal_finance_tracker/linux"
+    "cmake.sourceDirectory": "/home/zoro/github/personal_bahi_khata/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

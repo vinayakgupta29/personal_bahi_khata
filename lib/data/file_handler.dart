@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:personal_finance_tracker/data/database.dart';
-import 'package:personal_finance_tracker/presentation/homepage.dart';
-import 'package:personal_finance_tracker/presentation/opened_file.dart';
+import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/presentation/homepage.dart';
+import 'package:personal_bahi_khata/presentation/opened_file.dart';
 
 class FileHandler extends StatefulWidget {
   const FileHandler({Key? key}) : super(key: key);
@@ -12,14 +14,16 @@ class FileHandler extends StatefulWidget {
 }
 
 class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
-  static const platform = MethodChannel('com.vins.bahi_khata/open_file');
+  static const platform = MethodChannel(
+    'com.vins.personal_bahi_khata/open_file',
+  );
 
   String? openFileUrl;
 
   @override
   void initState() {
     super.initState();
-    getOpenFileUrl();
+    Platform.isAndroid ? getOpenFileUrl() : null;
     // Listen to lifecycle events.
     WidgetsBinding.instance.addObserver(this);
   }
@@ -33,15 +37,13 @@ class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      getOpenFileUrl();
+      Platform.isAndroid ? getOpenFileUrl() : null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(),
-    );
+    return const Scaffold(body: Center());
   }
 
   void getOpenFileUrl() async {
@@ -65,9 +67,7 @@ class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
           );
         } else if (mounted) {
           await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const HomePage(),
-            ),
+            MaterialPageRoute(builder: (context) => const HomePage()),
           );
         }
       } on PlatformException catch (e) {
@@ -92,20 +92,17 @@ class IntentHandler {
 class IntentData {
   final Uri? data;
 
-  IntentData({
-    required this.data,
-  });
+  IntentData({required this.data});
 
   factory IntentData.fromJson(Map<String, dynamic> json) {
-    return IntentData(
-      data: Uri.parse(json['data'] ?? ''),
-    );
+    return IntentData(data: Uri.parse(json['data'] ?? ''));
   }
 }
 
 class FileHandlerWR {
-  static const MethodChannel _channel =
-      MethodChannel('com.vins.bahi_khata/write_file');
+  static const MethodChannel _channel = MethodChannel(
+    'com.vins.personal_bahi_khata/write_file',
+  );
   static Future<void> writeToFile(String fileName, String content) async {
     try {
       debugPrint(content);

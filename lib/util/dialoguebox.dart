@@ -1,7 +1,7 @@
 // ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
 
 import 'package:flutter/material.dart';
-import 'package:personal_finance_tracker/util/mybutton.dart';
+import 'package:personal_bahi_khata/util/mybutton.dart';
 import '../util/constants.dart';
 
 class DialogBox extends StatelessWidget {
@@ -32,18 +32,20 @@ class DialogBox extends StatelessWidget {
               style: const TextStyle(color: textcolor),
               controller: titlecontroller,
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: "Add a new task",
-                  hintStyle: TextStyle(color: hintcol)),
+                border: OutlineInputBorder(),
+                hintText: "Add a new task",
+                hintStyle: TextStyle(color: hintcol),
+              ),
               textInputAction: TextInputAction.next,
             ),
             TextField(
               style: const TextStyle(color: textcolor),
               controller: desccontroller,
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: "Description",
-                  hintStyle: TextStyle(color: hintcol)),
+                border: OutlineInputBorder(),
+                hintText: "Description",
+                hintStyle: TextStyle(color: hintcol),
+              ),
               textInputAction: TextInputAction.done,
             ),
 

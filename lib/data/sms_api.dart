@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:personal_finance_tracker/data/database.dart';
-import 'package:personal_finance_tracker/main.dart';
+import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/main.dart';
 
 class SmsApi {
   static SmsQuery query = SmsQuery();
@@ -19,9 +19,7 @@ class SmsApi {
         return [];
       }
     }
-    var messagees = await query.querySms(
-      kinds: [SmsQueryKind.inbox],
-    );
+    var messagees = await query.querySms(kinds: [SmsQueryKind.inbox]);
     messagees =
         messagees.where((e) => isTransactionMessage(e.body ?? "")).toList();
     for (var e in messagees) {
@@ -47,18 +45,18 @@ class SmsApi {
 
   static filterSms() {
     getSms().then((value) {
-      messages0 = value.toList()
-        ..sort((a, b) {
-          if (a.date == null && b.date == null) {
-            return 0; // Both are null, consider equal
-          } else if (a.date == null) {
-            return 1; // Nulls go last
-          } else if (b.date == null) {
-            return -1; // Nulls go last
-          } else {
-            return b.date!.compareTo(a.date!); // Sort by date
-          }
-        });
+      messages0 =
+          value.toList()..sort((a, b) {
+            if (a.date == null && b.date == null) {
+              return 0; // Both are null, consider equal
+            } else if (a.date == null) {
+              return 1; // Nulls go last
+            } else if (b.date == null) {
+              return -1; // Nulls go last
+            } else {
+              return b.date!.compareTo(a.date!); // Sort by date
+            }
+          });
 
       DataBase.uniqueTags.add("SMS");
       expenseNotifier.update(DataBase.expenses);
@@ -84,23 +82,25 @@ class SmsApi {
       'debited',
       'transfer',
       'withdrawal',
-      'deposit'
+      'deposit',
     ];
     final List<String> negativeKeywords = [
       'refund',
       'return',
       "recharge",
       "congratulations",
-      "customers"
+      "customers",
     ];
 
     // Check for positive keywords
-    bool hasPositiveKeywords = positiveKeywords
-        .any((keyword) => message.toLowerCase().contains(keyword));
+    bool hasPositiveKeywords = positiveKeywords.any(
+      (keyword) => message.toLowerCase().contains(keyword),
+    );
 
     // Check for negative keywords
-    bool hasNegativeKeywords = negativeKeywords
-        .any((keyword) => message.toLowerCase().contains(keyword));
+    bool hasNegativeKeywords = negativeKeywords.any(
+      (keyword) => message.toLowerCase().contains(keyword),
+    );
 
     // Only include messages that have positive keywords and do not have negative keywords
     return hasPositiveKeywords && !hasNegativeKeywords;
@@ -120,6 +120,18 @@ class SmsApi {
       // Parse it as a double
       return double.parse(decimalString);
     }
+
+    final regex = RegExp(r'(?:Rs\.?\s*)([0-9]+(?:\.[0-9]+)?)');
+    Match? mtch2= regex.firstMatch(message);
+    if (mtch2 != null) {
+      debugPrint("${(mtch2.groupCount)}");
+      // Extract the matched string
+       String decimalString = mtch2.group(1)!;
+
+      // Parse it as a double
+      return double.parse(decimalString);
+    }
+
     return 0.0;
   }
 

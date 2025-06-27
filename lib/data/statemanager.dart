@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:personal_finance_tracker/data/database.dart';
+import 'package:personal_bahi_khata/data/database.dart';
 
 // Define a simple notifier class
 class ExpenseNotifier {

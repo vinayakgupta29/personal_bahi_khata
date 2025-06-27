@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:personal_finance_tracker/data/encryption.dart';
-import 'package:personal_finance_tracker/data/sms_api.dart';
+import 'package:personal_bahi_khata/data/encryption.dart';
+import 'package:personal_bahi_khata/data/sms_api.dart';
+import 'package:zstandard/zstandard.dart';
 
 // writeFile(Map<String, dynamic> data) async {
 //   var dir = await getExternalStorageDirectory();
@@ -15,12 +17,21 @@ import 'package:personal_finance_tracker/data/sms_api.dart';
 
 //   File('/storage/emulated/0/Files/fin.bkx').writeAsStringSync(jsonEncode(data));
 // }
+final Zstandard zstd = Zstandard();
+
+/// Compress and encrypt a JSON string using Zstandard and AES-GCM encryption.
+///
+/// [jsonData] is the JSON string to be compressed and encrypted.
+/// [key] is the encryption key.
+///
+/// Returns the encrypted data as a list of bytes.
 
 Future<List<int>> compressAndEncryptJson(String jsonData, List<int> key) async {
   // Compress JSON data
-  List<int> compressedData = GZipCodec().encode(utf8.encode(jsonData));
 
-  debugPrint("key $key");
+  Uint8List? compressedData = await zstd.compress(utf8.encode(jsonData), 13);
+
+  debugPrint("key ${key.length}");
   // // Encrypt compressed data
   // final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8(key)));
   // final iv = encrypt.IV.fromLength(16);
@@ -29,14 +40,18 @@ Future<List<int>> compressAndEncryptJson(String jsonData, List<int> key) async {
   // // Return base64 encoded encrypted data and IV
   // return "${base64.encode(encryptedData.bytes)}|${iv.base64}"
   //     .replaceAll('"', "");
-  var encryptedData =
-      await EncryptionAES.encryptAESGCM(compressedData, base64Encode(key));
+  var encryptedData = await EncryptionAES.encryptAESGCM(
+    List<int>.from(compressedData?.toList() ?? []),
+    base64Encode(key),
+  );
   return encryptedData;
 }
 
 // Function to decompress and decrypt JSON data
 Future<Map<String, dynamic>> decryptAndDecompressJson(
-    List<int> encryptedCompressedData, String key) async {
+  List<int> encryptedCompressedData,
+  String key,
+) async {
   // Extract IV and encrypted data
   debugPrint("key $key");
   // List<String> data = encryptedCompressedData.split("|");
@@ -55,16 +70,16 @@ Future<Map<String, dynamic>> decryptAndDecompressJson(
 
   var decryptedData = await EncryptionAES.decryptAESGCM(
     encryptedCompressedData,
-    base64Encode(
-      utf8.encode(key),
-    ),
+    base64Encode(utf8.encode(key)),
   );
 
   // Decompress decrypted data
-  List<int> decompressedData = GZipCodec().decode(decryptedData);
+  Uint8List? decompressedData = await zstd.decompress(
+    Uint8List.fromList(decryptedData),
+  );
 
   // Convert decompressed data to string and parse as JSON
-  String jsonString = utf8.decode(decompressedData);
+  String jsonString = utf8.decode(List.from(decompressedData ?? []));
   Map<String, dynamic> jsonData = jsonDecode(jsonString);
   debugPrint("json decry $jsonData");
   // Return JSON data
@@ -80,7 +95,7 @@ List<int> getUnixTime(DateTime? date) {
       (unixTime >> 24) & 0xFF,
       (unixTime >> 16) & 0xFF,
       (unixTime >> 8) & 0xFF,
-      unixTime & 0xFF
+      unixTime & 0xFF,
     ];
   } else {
     return [0, 0, 0, 0];
@@ -89,10 +104,13 @@ List<int> getUnixTime(DateTime? date) {
 
 DateTime getDateTimeFromUnixTime(List<int> dateAsBytes) {
   int unixTimeStartIndex = 7; // String length (7 bytes)
-  List<int> unixTimeBytes =
-      dateAsBytes.sublist(unixTimeStartIndex, unixTimeStartIndex + 4);
+  List<int> unixTimeBytes = dateAsBytes.sublist(
+    unixTimeStartIndex,
+    unixTimeStartIndex + 4,
+  );
 
-  int unixTime = unixTimeBytes[0] << 24 |
+  int unixTime =
+      unixTimeBytes[0] << 24 |
       unixTimeBytes[1] << 16 |
       unixTimeBytes[2] << 8 |
       unixTimeBytes[3];
@@ -141,20 +159,27 @@ class DataBase {
   static Future<String> loadExpenses() async {
     try {
       Directory? path = await getExternalStorageDirectory();
-      final file = await File('${path?.path}/fins.pbke')
-          .create(recursive: true); // Create if not found
+      final file = await File(
+        '${path?.path}/fins.pbke',
+      ).create(recursive: true); // Create if not found
       filepath = file.path;
       expFile = file;
       final contents = file.readAsBytesSync();
       debugPrint("contents $contents");
       // Decrypt and decompress JSON
       if (contents.isNotEmpty) {
-        int headerSize = utf8.encode(SIGNATURE).length + 4 + 19;
+        int headerSize = utf8.encode(SIGNATURE).length + 4 + 13;
         List<int> metadata = contents.sublist(0, headerSize - 1);
         SmsApi.lastDate = getDateTimeFromUnixTime(metadata);
-        List<int> data = contents.sublist(headerSize);
-        var decryptedDecompressedJson =
-            await decryptAndDecompressJson(data, EncryptionAES.KEY);
+        List<int> data = contents.sublist(
+          headerSize,
+          contents.length - EncryptionAES.KEY_LENGTH,
+        );
+
+        var decryptedDecompressedJson = await decryptAndDecompressJson(
+          data,
+          EncryptionAES.KEY,
+        );
         debugPrint("decrypted $decryptedDecompressedJson");
         json = jsonEncode(decryptedDecompressedJson);
       }
@@ -173,17 +198,20 @@ class DataBase {
       Directory? path = await getExternalStorageDirectory();
       debugPrint(path?.path);
       // Encrypt and compress JSON
-      List<int> encryptedCompressedString =
-          await compressAndEncryptJson(newJson, utf8.encode(EncryptionAES.KEY));
+      List<int> encryptedCompressedString = await compressAndEncryptJson(
+        newJson,
+        utf8.encode(EncryptionAES.KEY),
+      );
       List<int> fileContent = [
         ...utf8.encode(SIGNATURE),
         ...getUnixTime(date),
-        ...List.generate(19, (e) => 0),
-        ...encryptedCompressedString
+        ...List.generate(13, (e) => 0),
+        ...encryptedCompressedString,
       ];
       debugPrint("enc $encryptedCompressedString");
-      var file =
-          await File('${path?.path}/fins.pbke').writeAsBytes(fileContent);
+      var file = await File(
+        '${path?.path}/fins.pbke',
+      ).writeAsBytes(fileContent);
       filepath = file.path;
       expFile = File('${path?.path}/fins.pbke');
 
@@ -201,6 +229,7 @@ class Expense {
   String? date;
   String? amount;
   bool? isDebit;
+  String currency;
 
   Expense({
     this.name,
@@ -209,6 +238,7 @@ class Expense {
     this.date,
     this.amount,
     this.isDebit = true,
+    this.currency = "INR",
   });
 
   factory Expense.fromRawJson(String str) => Expense.fromJson(json.decode(str));
@@ -216,24 +246,25 @@ class Expense {
   String toRawJson() => json.encode(toJson());
 
   factory Expense.fromJson(Map<String, dynamic> json) => Expense(
-        name: json["name"],
-        label: json["label"] == null
+    name: json["name"],
+    label:
+        json["label"] == null
             ? []
             : List<String>.from(json["label"]!.map((x) => x)),
-        id: json["id"],
-        date: json["date"],
-        amount: json["amount"],
-        isDebit: json["isDebit"],
-      );
+    id: json["id"],
+    date: json["date"],
+    amount: json["amount"],
+    isDebit: json["isDebit"],
+  );
 
   Map<String, dynamic> toJson() => {
-        "name": name,
-        "label": label,
-        "id": id,
-        "date": date,
-        "amount": amount,
-        "isDebit": isDebit,
-      };
+    "name": name,
+    "label": label,
+    "id": id,
+    "date": date,
+    "amount": amount,
+    "isDebit": isDebit,
+  };
 
   static List<Expense> listFromRawJson(String str) {
     Map<String, dynamic> jsonRes = json.decode(str);
@@ -243,8 +274,9 @@ class Expense {
   }
 
   static List<Map<String, dynamic>> listToJson(List<Expense> list) {
-    List<Map<String, dynamic>> jsonList =
-        List<Map<String, dynamic>>.from(list.map((item) => item.toJson()));
+    List<Map<String, dynamic>> jsonList = List<Map<String, dynamic>>.from(
+      list.map((item) => item.toJson()),
+    );
     return jsonList;
   }
 
