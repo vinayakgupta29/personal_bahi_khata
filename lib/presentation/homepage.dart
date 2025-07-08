@@ -186,7 +186,7 @@ class _HomePageState extends State<HomePage> {
     Platform.isAndroid
         ? TelephonyService().isTelephonyAvailable().then((val) {
           setState(() {
-            //  SmsApi.filterSms();
+            SmsApi.filterSms();
           });
         })
         : null;

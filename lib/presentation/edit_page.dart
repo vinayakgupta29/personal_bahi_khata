@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_bahi_khata/data/database.dart';
 import 'package:personal_bahi_khata/main.dart';
+import 'package:personal_bahi_khata/util/constants.dart';
 
 class EditPage extends StatefulWidget {
   final Expense expense;
@@ -504,6 +505,11 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                         ),
                         const Spacer(),
                         ElevatedButton(
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStatePropertyAll(
+                              floatingButtonColor,
+                            ),
+                          ),
                           onPressed: () {
                             setState(() {
                               _validate = _amountController.text.isEmpty;
@@ -511,7 +517,10 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
                             _validate ? null : saveNewExpense();
                             debugPrint("$_foundExpense");
                           },
-                          child: const Text("Save"),
+                          child: const Text(
+                            "Save",
+                            style: TextStyle(color: buttonTextColor),
+                          ),
                         ),
                       ],
                     ),
