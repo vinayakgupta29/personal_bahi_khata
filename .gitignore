@@ -43,4 +43,5 @@ app.*.map.json
 /android/app/release
 
 
-keystore.jks
+*.jks
+*.pem

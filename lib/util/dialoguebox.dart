@@ -1,7 +1,7 @@
 // ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
 
 import 'package:flutter/material.dart';
-import 'package:personal_finance_tracker/util/mybutton.dart';
+import 'package:personal_bahi_khata/util/mybutton.dart';
 import '../util/constants.dart';
 
 class DialogBox extends StatelessWidget {

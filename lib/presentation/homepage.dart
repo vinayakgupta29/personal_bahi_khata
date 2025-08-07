@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:personal_finance_tracker/data/database.dart';
-import 'package:personal_finance_tracker/main.dart';
-import 'package:personal_finance_tracker/presentation/bottomsheet.dart';
-import 'package:personal_finance_tracker/presentation/searchpage.dart';
-import 'package:personal_finance_tracker/util/constants.dart';
+import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/main.dart';
+import 'package:personal_bahi_khata/presentation/bottomsheet.dart';
+import 'package:personal_bahi_khata/presentation/searchpage.dart';
+import 'package:personal_bahi_khata/util/constants.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({

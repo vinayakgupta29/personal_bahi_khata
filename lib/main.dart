@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:personal_finance_tracker/data/file_handler.dart';
-import 'package:personal_finance_tracker/data/statemanager.dart';
+import 'package:personal_bahi_khata/data/file_handler.dart';
+import 'package:personal_bahi_khata/data/statemanager.dart';
 
 final expenseNotifier = ExpenseNotifier();
 

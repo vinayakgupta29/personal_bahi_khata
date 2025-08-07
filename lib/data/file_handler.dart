@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:personal_finance_tracker/data/database.dart';
-import 'package:personal_finance_tracker/presentation/homepage.dart';
-import 'package:personal_finance_tracker/presentation/opened_file.dart';
+import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/presentation/homepage.dart';
+import 'package:personal_bahi_khata/presentation/opened_file.dart';
 
 class FileHandler extends StatefulWidget {
   const FileHandler({Key? key}) : super(key: key);
@@ -14,7 +14,7 @@ class FileHandler extends StatefulWidget {
 }
 
 class _FileHandlerState extends State<FileHandler> with WidgetsBindingObserver {
-  static const platform = MethodChannel('com.vins.bahi_khata/open_file');
+  static const platform = MethodChannel('com.vins.personal_bahi_khata/open_file');
 
   String? openFileUrl;
 
@@ -107,7 +107,7 @@ class IntentData {
 
 class FileHandlerWR {
   static const MethodChannel _channel =
-      MethodChannel('com.vins.bahi_khata/write_file');
+      MethodChannel('com.vins.personal_bahi_khata/write_file');
   static Future<void> writeToFile(String fileName, String content) async {
     try {
       debugPrint(content);

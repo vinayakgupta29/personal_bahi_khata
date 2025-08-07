@@ -1,6 +1,6 @@
 {
-    "name": "personal_finance_tracker",
-    "short_name": "personal_finance_tracker",
+    "name": "personal_bahi_khata",
+    "short_name": "personal_bahi_khata",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
