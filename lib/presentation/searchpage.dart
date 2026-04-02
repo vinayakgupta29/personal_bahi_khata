@@ -139,6 +139,9 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
           backgroundColor: Colors.black,
+          actions: [
+            IconButton(onPressed: ()=>Navigator.pop(context), icon: Icon(Icons.arrow_back_ios))
+          ],
           leading: IconButton(
             icon: const Icon(Icons.check_rounded, color: Colors.white),
             onPressed: () {
@@ -205,7 +208,7 @@ class _SearchPageState extends State<SearchPage> {
                               child: Text(e.toString()),
                             ),
                           )
-                          .toList(),
+                          ,
                     ],
                     onChanged: (int? val) {
                       setState(() {

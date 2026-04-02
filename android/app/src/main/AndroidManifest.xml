@@ -13,7 +13,7 @@
         android:icon="@mipmap/ic_launcher">
 
         <provider android:name="androidx.core.content.FileProvider"
-            android:authorities="com.vins.personal_bahi_khata.fileprovider" android:exported="false"
+            android:authorities="com.vins.bahi_khata.fileprovider" android:exported="false"
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
@@ -41,13 +41,27 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Intent filter to handle .pbke files -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" />
+                <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="content" />
-                <data android:mimeType="text/*" />
+                <data android:mimeType="application/vnd.vins.bahi-khata" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="file" />
+                <data android:pathPattern=".*\\.pbke" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
                 <data android:pathPattern=".*\\.pbke" />
             </intent-filter>
         </activity>

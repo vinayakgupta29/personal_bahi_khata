@@ -8,8 +8,8 @@ plugins {
 }
 
 android {
-    namespace = "com.vins.personal_bahi_khata"
-    compileSdk = 35
+    namespace = "com.vins.bahi_khata"
+    compileSdk = 36
     ndkVersion = "28.1.13356709"
 
     compileOptions {
@@ -23,12 +23,12 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.vins.personal_bahi_khata"
+        applicationId = "com.vins.bahi_khata"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = 35
-        versionCode = 23
+        versionCode = 25
         versionName = flutter.versionName
     }
     signingConfigs {

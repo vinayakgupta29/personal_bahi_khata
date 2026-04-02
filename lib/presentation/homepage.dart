@@ -1,17 +1,22 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_bahi_khata/data/database.dart';
-import 'package:personal_bahi_khata/data/sms_api.dart';
+import 'package:personal_bahi_khata/data/expenses.dart';
+import 'package:personal_bahi_khata/data/pbke_file.dart';
 import 'package:personal_bahi_khata/data/telephony_service.dart';
+import 'package:personal_bahi_khata/data/sms_api.dart';
 import 'package:personal_bahi_khata/main.dart';
 import 'package:personal_bahi_khata/presentation/bottomsheet.dart';
 import 'package:personal_bahi_khata/presentation/edit_page.dart';
+import 'package:personal_bahi_khata/presentation/private_feature.dart';
 import 'package:personal_bahi_khata/presentation/searchpage.dart';
 import 'package:personal_bahi_khata/presentation/splash_screen.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:personal_bahi_khata/util/constants.dart';
 
 class HomePage extends StatefulWidget {
@@ -158,6 +163,178 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _syncLocalExpenseState() {
+    List<String> allTags = [];
+    DataBase.uniqueyears.clear();
+    for (Expense obj in DataBase.expenses) {
+      if (obj.date != null) {
+        DataBase.uniqueyears.add(DateTime.parse(obj.date!).year);
+      }
+      if (obj.label != null) {
+        allTags.addAll(obj.label!);
+      }
+    }
+    DataBase.uniqueTags = Set<String>.from(allTags);
+    expenseNotifier.update(List<Expense>.from(DataBase.expenses));
+  }
+
+  Future<void> _showMessageDialog(String title, String message) async {
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: bgcolor,
+            title: Text(title, style: const TextStyle(color: textcolor)),
+            content: Text(message, style: const TextStyle(color: textcolor)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<String?> _showFormatDialog(String title) async {
+    if (!mounted) {
+      return null;
+    }
+
+    return showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: bgcolor,
+            title: Text(title, style: const TextStyle(color: textcolor)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const Text("PBKE", style: TextStyle(color: textcolor)),
+                  onTap: () => Navigator.of(context).pop("pbke"),
+                ),
+                ListTile(
+                  title: const Text("JSON", style: TextStyle(color: textcolor)),
+                  onTap: () => Navigator.of(context).pop("json"),
+                ),
+                ListTile(
+                  title: const Text("CSV", style: TextStyle(color: textcolor)),
+                  onTap: () => Navigator.of(context).pop("csv"),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Future<void> _openSearch() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => SearchPage(
+              onPopCallback: () {
+                setState(() {});
+              },
+            ),
+      ),
+    );
+  }
+
+  Future<void> _importExpenses() async {
+    final selectedFormat = await _showFormatDialog("Import");
+    if (selectedFormat == null) {
+      return;
+    }
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [selectedFormat],
+    );
+
+    if (result == null || result.files.single.path == null) {
+      return;
+    }
+
+    try {
+      await DataBase.importExpensesFromFile(result.files.single.path!);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _syncLocalExpenseState();
+      });
+    } catch (e) {
+      final message =
+          e is FormatException ? e.message : DataBase.unsupportedFileMessage;
+      await _showMessageDialog("Import", message);
+    }
+  }
+
+  Future<void> _exportExpenses() async {
+    final selectedFormat = await _showFormatDialog("Export");
+    if (selectedFormat == null) {
+      return;
+    }
+
+    try {
+      final exportedFile = await DataBase.exportExpensesFile(selectedFormat);
+      if (Platform.isLinux) {
+        await _showMessageDialog("Export", "Exported to ${exportedFile.path}");
+        return;
+      }
+
+      final mimeType =
+          selectedFormat == "csv"
+              ? "text/csv"
+              : selectedFormat == "json"
+              ? "application/json"
+              : PbkeFile.mimeType;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(exportedFile.path, mimeType: mimeType)],
+        ),
+      );
+    } catch (e) {
+      final message =
+          e is FormatException ? e.message : DataBase.unsupportedFileMessage;
+      await _showMessageDialog("Export", message);
+    }
+  }
+
+  Future<void> _toggleSmsExpenses(bool enabled) async {
+    try {
+      if (enabled) {
+        final hasPermission = await SmsApi.ensureSmsPermission();
+        if (!hasPermission) {
+          await _showMessageDialog(
+            "SMS",
+            "SMS permission is required to enable SMS expenses",
+          );
+          return;
+        }
+      }
+
+      await DataBase.setSmsExpensesEnabled(enabled);
+      _syncLocalExpenseState();
+
+      if (enabled) {
+        await SmsApi.filterSms();
+        _syncLocalExpenseState();
+      }
+    } catch (e) {
+      final message =
+          e is FormatException ? e.message : DataBase.unsupportedFileMessage;
+      await _showMessageDialog("SMS", message);
+    }
+  }
+
   @override
   void initState() {
     DataBase.loadExpenses().then((value) {
@@ -165,44 +342,28 @@ class _HomePageState extends State<HomePage> {
         json = value;
         debugPrint(json);
         DataBase.expenses = Expense.listFromRawJson(json);
-        List<String> allTags = [];
-        for (Expense obj in DataBase.expenses) {
-          if (obj.date != null) {
-            var year = DateTime.parse(obj.date!).year;
-            debugPrint("$year ${DataBase.uniqueyears.contains(year)}");
-            if (!DataBase.uniqueyears.contains(year)) {
-              DataBase.uniqueyears.add(year);
-            }
-            debugPrint("sa ${DataBase.uniqueyears}");
-          }
-          if (obj.label != null) {
-            allTags.addAll(obj.label!);
-          }
-        }
-        DataBase.uniqueTags = Set<String>.from(allTags);
-        expenseNotifier.update(Expense.listFromRawJson(json));
+        _syncLocalExpenseState();
       });
-    });
-    Platform.isAndroid
-        ? TelephonyService().isTelephonyAvailable().then((val) {
-          setState(() {
-            SmsApi.filterSms();
+      if (Platform.isAndroid && DataBase.smsExpensesEnabled) {
+        TelephonyService().isTelephonyAvailable().then((val) {
+          SmsApi.filterSms().then((_) {
+            if (!mounted) {
+              return;
+            }
+            setState(() {
+              _syncLocalExpenseState();
+            });
           });
-        })
-        : null;
+        });
+      }
+    });
 
     super.initState();
   }
 
   @override
-  void dispose() {
-    expenseNotifier.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
+    return StreamBuilder<List<Expense>>(
       stream: expenseNotifier.stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -314,6 +475,87 @@ class _HomePageState extends State<HomePage> {
 
         return Scaffold(
           backgroundColor: bgcolor,
+          drawer: Drawer(
+            backgroundColor: bgcolor,
+            child: SafeArea(
+              child: ListView(
+                children: [
+                  const DrawerHeader(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        "Personal Bahi Khata",
+                        style: TextStyle(
+                          color: textcolor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.file_upload_outlined,
+                      color: Colors.white,
+                    ),
+                    title: const Text(
+                      "Import",
+                      style: TextStyle(color: textcolor),
+                    ),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _importExpenses();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.file_download_outlined,
+                      color: Colors.white,
+                    ),
+                    title: const Text(
+                      "Export",
+                      style: TextStyle(color: textcolor),
+                    ),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _exportExpenses();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.search_outlined,
+                      color: Colors.white,
+                    ),
+                    title: const Text(
+                      "Search",
+                      style: TextStyle(color: textcolor),
+                    ),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _openSearch();
+                    },
+                  ),
+                  const PrivateFeatureTile(),
+                  SwitchListTile(
+                    activeThumbColor: Colors.green,
+                    title: const Text(
+                      "SMS Expenses",
+                      style: TextStyle(color: textcolor),
+                    ),
+                    subtitle: const Text(
+                      "Enable or remove SMS-based expenses",
+                      style: TextStyle(color: hintcol),
+                    ),
+                    value: DataBase.smsExpensesEnabled,
+                    onChanged: (value) async {
+                      Navigator.of(context).pop();
+                      await _toggleSmsExpenses(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
           appBar: AppBar(
             title: const Text(
               "Expenses",
@@ -324,25 +566,28 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
             elevation: 10,
             actions: [
               IconButton(
+                onPressed: _importExpenses,
+                icon: const Icon(
+                  Icons.file_upload_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              IconButton(
+                onPressed: _exportExpenses,
+                icon: const Icon(
+                  Icons.file_download_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              IconButton(
                 onPressed: () {
-                  // DataBase.expFile != null
-                  //     ? Share.shareXFiles([XFile(DataBase.expFile?.path ?? "")])
-                  //     : null;
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => SearchPage(
-                            onPopCallback: () {
-                              setState(() {});
-                            },
-                          ),
-                    ),
-                  );
+                  _openSearch();
                 },
                 icon: const Icon(
                   Icons.search_outlined,
@@ -430,8 +675,14 @@ class _HomePageState extends State<HomePage> {
                             // List of items for that month and year
                             for (Expense obj in objects)
                               Column(
+                                key: ValueKey(
+                                  "expense-${DataBase.expenseIdentity(obj)}",
+                                ),
                                 children: [
                                   Slidable(
+                                    key: ValueKey(
+                                      "slidable-${DataBase.expenseIdentity(obj)}",
+                                    ),
                                     endActionPane: ActionPane(
                                       motion: const StretchMotion(),
                                       children: [
@@ -458,7 +709,6 @@ class _HomePageState extends State<HomePage> {
                                       ],
                                     ),
                                     child: ListTile(
-                                      key: Key(obj.id ?? ""),
                                       tileColor: itemcolor,
                                       title: Text(
                                         obj.name ?? "hi",

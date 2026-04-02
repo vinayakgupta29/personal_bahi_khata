@@ -1,9 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
 import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/data/expenses.dart';
 import 'package:personal_bahi_khata/main.dart';
 import 'package:personal_bahi_khata/util/constants.dart';
 
@@ -57,15 +57,14 @@ class _EditPageState extends State<EditPage> with TickerProviderStateMixin {
           amount: double.parse(_amountController.text).toString(),
           label: selectedTags,
           isDebit: _isDebit,
+          isSMS: widget.expense.isSMS,
         );
       }
       // db.updateDatabase();
 
       expenseNotifier.update(DataBase.expenses);
-      var newList = Expense.listToJson(DataBase.expenses);
-      var newJson = jsonEncode({"expenses": newList});
-      debugPrint("newJson $newJson");
-      DataBase.saveExpenses(newJson, null);
+      debugPrint("updated expenses ${DataBase.expenses.length}");
+      DataBase.persistCurrentExpenses();
     });
     for (var tag in selectedTags) {
       if (!DataBase.uniqueTags.contains(tag)) {

@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_bahi_khata/data/database.dart';
-import 'package:personal_bahi_khata/data/encryption.dart';
+import 'package:personal_bahi_khata/data/pbke_file.dart';
 import 'package:personal_bahi_khata/presentation/searchpage.dart';
+import 'package:personal_bahi_khata/data/expenses.dart';
 import 'package:personal_bahi_khata/util/constants.dart';
 
 class OpenedFilePage extends StatefulWidget {
@@ -18,12 +17,43 @@ class OpenedFilePage extends StatefulWidget {
 }
 
 class _OpenedFilePageState extends State<OpenedFilePage> {
-  late Uint8List file;
+  Map<String, dynamic> data = {};
+  String? fileError;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    file = readFile(widget.filePath);
+    openFile();
+  }
+
+  Future<void> openFile() async {
+    try {
+      final openedFile = await PbkeFile.readPbkeFile(widget.filePath);
+      if (openedFile == null) {
+        throw const FormatException("File is not-supported");
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        data = openedFile.data;
+        fileError = null;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        data = {};
+        fileError = e is FormatException ? e.message : "File is not-supported";
+        isLoading = false;
+      });
+    }
   }
 
   bool dateFilter(Expense obj) {
@@ -39,17 +69,39 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
 
   @override
   Widget build(BuildContext context) {
-    List<int> jsondata = (readFile(widget.filePath));
-    Map<String, dynamic> data = {};
-
-    decryptAndDecompressJson(jsondata, EncryptionAES.KEY).then(
-      (val) => {
-        setState(() {
-          data = val;
-        }),
-      },
-    );
     debugPrint("data key ${data.keys}");
+
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: bgcolor,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (fileError != null) {
+      return Scaffold(
+        backgroundColor: bgcolor,
+        appBar: AppBar(
+          title: const Text(
+            "Expenses",
+            style: TextStyle(
+              color: textcolor,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          backgroundColor: Colors.black,
+          elevation: 10,
+        ),
+        body: Center(
+          child: Text(
+            fileError ?? "File is not-supported",
+            style: const TextStyle(color: textcolor, fontSize: 18),
+          ),
+        ),
+      );
+    }
+
     var foundExpense = Expense.listFromRawJson(jsonEncode(data));
     foundExpense.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date!);
@@ -260,7 +312,4 @@ class _OpenedFilePageState extends State<OpenedFilePage> {
     );
   }
 
-  Uint8List readFile(String filepath) {
-    return File(filepath).readAsBytesSync();
-  }
 }

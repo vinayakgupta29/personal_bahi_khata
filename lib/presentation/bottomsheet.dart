@@ -1,9 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
 import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/data/expenses.dart';
 import 'package:personal_bahi_khata/main.dart';
 import 'package:personal_bahi_khata/util/constants.dart';
 
@@ -35,6 +35,32 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
 
   late AnimationController _creditAnimationController;
   late AnimationController _debitAnimationController;
+
+  InputDecoration _fieldDecoration({required String label, String? errorText}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: hintcol),
+      errorText: errorText,
+      filled: true,
+      fillColor: itemcolor,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.white24),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: floatingButtonColor, width: 1.4),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.4),
+      ),
+    );
+  }
   // checkbox was tapped
   // void checkBoxChanged(Expense exp) {
   //   setState(() {
@@ -61,10 +87,8 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
       // db.updateDatabase();
 
       expenseNotifier.update(DataBase.expenses);
-      var newList = Expense.listToJson(DataBase.expenses);
-      var newJson = jsonEncode({"expenses": newList});
-      debugPrint("newJson $newJson");
-      DataBase.saveExpenses(newJson, null);
+      debugPrint("new expenses ${DataBase.expenses.length}");
+      DataBase.persistCurrentExpenses();
     });
     for (var tag in selectedTags) {
       if (!DataBase.uniqueTags.contains(tag)) {
@@ -133,7 +157,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: addPageBackgroundColor,
+      backgroundColor: bgcolor,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -146,17 +170,35 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                     alignment: Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: textcolor,
+                      ),
                     ),
                   ),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        "Add Expense",
+                        style: TextStyle(
+                          color: textcolor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
                       controller: _titlecontroller,
+                      style: const TextStyle(color: textcolor),
                       inputFormatters: [LengthLimitingTextInputFormatter(50)],
-                      decoration: InputDecoration(
-                        label: const Text("Name"),
-                        labelStyle: const TextStyle(color: Color(0xFF69656F)),
+                      decoration: _fieldDecoration(
+                        label: "Name",
                         errorText: _validate ? "Please Fill the Name" : null,
                       ),
                       textInputAction: TextInputAction.next,
@@ -173,15 +215,15 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
                       controller: _amountController,
+                      style: const TextStyle(color: textcolor),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
                           RegExp(r'^\d+\.?\d{0,2}$'),
                         ),
                       ],
-                      decoration: InputDecoration(
-                        label: const Text("Amount"),
-                        labelStyle: const TextStyle(color: Color(0xFF69656F)),
+                      decoration: _fieldDecoration(
+                        label: "Amount",
                         errorText: _validate ? "Please Fill the Amount" : null,
                       ),
                     ),
@@ -200,8 +242,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                           height: 100,
                           child: Material(
                             type: MaterialType.canvas,
-                            color:
-                                addPageBackgroundColor..withValues(alpha: 204),
+                            color: itemcolor,
                             child: ListView(
                               shrinkWrap: true,
                               padding: EdgeInsets.zero,
@@ -216,7 +257,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                                           right: 25.0,
                                         ),
                                         child: Card(
-                                          color: addPageBackgroundColor,
+                                          color: bgcolor,
                                           child: Container(
                                             width:
                                                 MediaQuery.of(
@@ -224,7 +265,12 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                                                 ).size.width -
                                                 20,
                                             padding: const EdgeInsets.all(10),
-                                            child: Text(opt),
+                                            child: Text(
+                                              opt,
+                                              style: const TextStyle(
+                                                color: textcolor,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -253,6 +299,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                                 const Text(
                                   "Tags",
                                   style: TextStyle(
+                                    color: textcolor,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -300,11 +347,9 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                                           .toList(),
                                 ),
                                 TextField(
-                                  decoration: const InputDecoration(
-                                    labelText: "Enter Tag",
-                                    hintStyle: TextStyle(
-                                      color: Colors.white54,
-                                    ), // Hint text color
+                                  style: const TextStyle(color: textcolor),
+                                  decoration: _fieldDecoration(
+                                    label: "Enter Tag",
                                   ),
                                   controller: selectedTagController,
                                   focusNode: focusNode,
@@ -352,6 +397,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                     ),
                   ),
                   TextButton(
+                    style: TextButton.styleFrom(foregroundColor: textcolor),
                     onPressed: () {
                       showDatePicker(
                         context: context,
@@ -366,7 +412,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                         }
                       });
                     },
-                    child: Text((DateFormat.yMEd().format(_selectedDate))),
+                    child: Text(DateFormat.yMEd().format(_selectedDate)),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -380,6 +426,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                               Text(
                                 "Credit",
                                 style: TextStyle(
+                                  color: Colors.white70,
                                   fontWeight:
                                       _isDebit
                                           ? FontWeight.normal
@@ -461,6 +508,7 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                                       _isDebit
                                           ? FontWeight.bold
                                           : FontWeight.normal,
+                                  color: Colors.white70,
                                 ),
                               ),
                               AnimatedBuilder(
@@ -502,6 +550,9 @@ class _PaymntBottomSheetState extends State<PaymntBottomSheet>
                           style: ButtonStyle(
                             backgroundColor: WidgetStatePropertyAll(
                               floatingButtonColor,
+                            ),
+                            foregroundColor: const WidgetStatePropertyAll(
+                              buttonTextColor,
                             ),
                           ),
                           onPressed: () {

@@ -1,1 +1,3 @@
-<string name="vks">vnd.android.cursor.item/com.vins.personal_bahi_khata</string>
+<resources>
+    <string name="pbke_mime_type">application/vnd.vins.bahi-khata</string>
+</resources>

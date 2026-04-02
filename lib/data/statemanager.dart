@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:personal_bahi_khata/data/database.dart';
 
+import 'package:personal_bahi_khata/data/expenses.dart';
 // Define a simple notifier class
 class ExpenseNotifier {
   final _controller = StreamController<List<Expense>>.broadcast();

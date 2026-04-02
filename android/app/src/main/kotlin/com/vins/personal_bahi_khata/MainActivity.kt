@@ -1,32 +1,31 @@
 
-package com.vins.personal_bahi_khata
+package com.vins.bahi_khata
 
 
 import android.content.Intent
 import android.os.Bundle
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugins.GeneratedPluginRegistrant
-import android.Manifest
-import android.content.pm.PackageManager
 import android.telephony.TelephonyManager
-import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.FileOutputStream
 
 
 
 
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "com.vins.personal_bahi_khata/open_file"
+    private val CHANNEL = "com.vins.bahi_khata/open_file"
 
     var openPath: String? = null
-    private val fileProvider = "com.vins.personal_bahi_khata.fileprovider"
+    private val fileProvider = "com.vins.bahi_khata.fileprovider"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
-        GeneratedPluginRegistrant.registerWith(flutterEngine)
+        super.configureFlutterEngine(flutterEngine)
     
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler { call, result ->
@@ -45,7 +44,7 @@ class MainActivity : FlutterActivity() {
 
 
     
-//      val channel2 =  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.vins.personal_bahi_khata/write_file")
+//      val channel2 =  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.vins.bahi_khata/write_file")
 //      channel2.setMethodCallHandler { call, result ->
 //            when (call.method) {
 //                "writeToFile" -> {
@@ -77,12 +76,42 @@ class MainActivity : FlutterActivity() {
     }
     
     private fun handleOpenFileUrl(intent: Intent?) {
+        val uri = intent?.data ?: return
+        openPath =
+            when (uri.scheme) {
+                "content" -> copyContentUriToCache(uri)
+                "file" -> uri.path
+                else -> uri.path
+            }
+        println("openPath: $openPath")
+    }
 
-        val path = intent?.data?.path
-        if (path != null) {
-            openPath = path.substring(5) // Adjust the substring index based on your file URI format
-            println("path: $path")
+    private fun copyContentUriToCache(uri: Uri): String? {
+        val fileName = resolveFileName(uri) ?: "opened_file.pbke"
+        val safeFileName =
+            if (fileName.endsWith(".pbke")) fileName else "$fileName.pbke"
+        val targetDir = File(cacheDir, "opened_pbke").apply { mkdirs() }
+        val targetFile = File(targetDir, safeFileName)
+
+        contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(targetFile).use { output ->
+                input.copyTo(output)
+            }
+            return targetFile.absolutePath
         }
+        return null
+    }
+
+    private fun resolveFileName(uri: Uri): String? {
+        if (uri.scheme == "content") {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1 && cursor.moveToFirst()) {
+                    return cursor.getString(nameIndex)
+                }
+            }
+        }
+        return uri.lastPathSegment?.substringAfterLast('/')
     }
 
     private fun isTelephonyAvailable(): Boolean {

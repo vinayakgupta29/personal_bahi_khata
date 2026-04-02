@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_bahi_khata/data/database.dart';
+import 'package:personal_bahi_khata/data/expenses.dart';
 import 'package:personal_bahi_khata/main.dart';
 
 class SmsApi {
@@ -11,26 +10,48 @@ class SmsApi {
   static List<SmsMessage> messages0 = [];
   static List<Expense> exp0 = [];
   static DateTime? lastDate;
-  static Future<List<SmsMessage>> getSms() async {
+
+  static String _buildSmsExpenseId(SmsMessage message) {
+    return "sms_${message.date?.millisecondsSinceEpoch ?? 0}_${message.address ?? "unknown"}";
+  }
+
+  static Future<bool> ensureSmsPermission() async {
     PermissionStatus permissionStatus = await Permission.sms.status;
-    if (PermissionStatus.granted != permissionStatus) {
-      PermissionStatus permissionStatus = await Permission.sms.request();
-      if (permissionStatus.isDenied) {
-        return [];
-      }
+    if (PermissionStatus.granted == permissionStatus) {
+      return true;
+    }
+
+    permissionStatus = await Permission.sms.request();
+    return permissionStatus.isGranted;
+  }
+
+  static Future<List<SmsMessage>> getSms() async {
+    if (!DataBase.smsExpensesEnabled) {
+      return [];
+    }
+
+    final hasPermission = await ensureSmsPermission();
+    if (!hasPermission) {
+      return [];
     }
     var messagees = await query.querySms(kinds: [SmsQueryKind.inbox]);
     messagees =
         messagees.where((e) => isTransactionMessage(e.body ?? "")).toList();
     for (var e in messagees) {
-      print(e.body);
+      final smsId = _buildSmsExpenseId(e);
+      if (DataBase.expenses.any((expense) => expense.id == smsId)) {
+        continue;
+      }
+      debugPrint(e.body);
       DataBase.expenses.add(
         Expense(
           name: "From SMS ${e.address}",
           label: ["SMS"],
+          id: smsId,
           amount: getAmount(e.body?.replaceAll(",", "") ?? "").toString(),
           date: e.date?.toIso8601String() ?? DateTime.now().toIso8601String(),
           isDebit: e.body?.contains("debited") ?? false,
+          isSMS: true,
         ),
       );
       if (DataBase.uniqueyears.contains(e.date?.year) && e.date != null) {
@@ -43,36 +64,36 @@ class SmsApi {
     return messagees;
   }
 
-  static filterSms() {
-    getSms().then((value) {
-      messages0 =
-          value.toList()..sort((a, b) {
-            if (a.date == null && b.date == null) {
-              return 0; // Both are null, consider equal
-            } else if (a.date == null) {
-              return 1; // Nulls go last
-            } else if (b.date == null) {
-              return -1; // Nulls go last
-            } else {
-              return b.date!.compareTo(a.date!); // Sort by date
-            }
-          });
+  static Future<void> filterSms() async {
+    if (!DataBase.smsExpensesEnabled) {
+      return;
+    }
 
-      DataBase.uniqueTags.add("SMS");
-      expenseNotifier.update(DataBase.expenses);
+    final value = await getSms();
+    messages0 =
+        value.toList()..sort((a, b) {
+          if (a.date == null && b.date == null) {
+            return 0; // Both are null, consider equal
+          } else if (a.date == null) {
+            return 1; // Nulls go last
+          } else if (b.date == null) {
+            return -1; // Nulls go last
+          } else {
+            return b.date!.compareTo(a.date!); // Sort by date
+          }
+        });
 
-      var newList = Expense.listToJson(DataBase.expenses);
-      var newJson = jsonEncode({
-        "expenses": newList,
-        "lastDate": lastDate?.toIso8601String(),
-      });
+    DataBase.uniqueTags.add("SMS");
+    DataBase.sortExpensesByDate(DataBase.expenses);
+    expenseNotifier.update(DataBase.expenses);
 
+    if (messages0.isNotEmpty) {
       lastDate = messages0.first.date;
       debugPrint("date ${lastDate?.toIso8601String()}");
-      DataBase.saveExpenses(newJson, lastDate);
+    }
+    await DataBase.persistCurrentExpenses(date: lastDate);
 
-      debugPrint("messages ${messages0.length}");
-    });
+    debugPrint("messages ${messages0.length}");
   }
 
   static bool isTransactionMessage(String message) {
@@ -122,11 +143,11 @@ class SmsApi {
     }
 
     final regex = RegExp(r'(?:Rs\.?\s*)([0-9]+(?:\.[0-9]+)?)');
-    Match? mtch2= regex.firstMatch(message);
+    Match? mtch2 = regex.firstMatch(message);
     if (mtch2 != null) {
       debugPrint("${(mtch2.groupCount)}");
       // Extract the matched string
-       String decimalString = mtch2.group(1)!;
+      String decimalString = mtch2.group(1)!;
 
       // Parse it as a double
       return double.parse(decimalString);
